@@ -2,7 +2,7 @@
 #include <string.h>
 #include "civetweb.h"
 
-#include "definitions.hpp"
+#include "../definitions.hpp"
 
 
 // This function will be called by civetweb on every new request.
