@@ -2,6 +2,9 @@
 #include <string.h>
 #include "civetweb.h"
 
+#include "definitions.hpp"
+
+
 // This function will be called by civetweb on every new request.
 static int handle_request(struct mg_connection* connection) {
 	const struct mg_request_info* request_info = mg_get_request_info(connection);
@@ -44,6 +47,8 @@ int main() {
 	// Wait until user enters 'q'. Server is running in separate thread.
 	// Navigating to http://localhost:8080 will invoke handle_request().
 	while (getchar() != 'q');
+	
+	for (int i = 0; i <= 10; i++) printf("%d ", TimeAndDate::build(0, 0, 1995 + i).get_day_of_week());
 	
 	// Stop the server.
 	mg_stop(ctx);
