@@ -7,7 +7,7 @@
 #define f32 float
 #define f64 double
 
-#define SECONDS_IN_DAY 86400
+#define MINUTES_IN_DAY 1440
 #define JAN_1_2000_DAY Saturday
 
 template <typename T>
@@ -25,19 +25,18 @@ struct Option {
 
 
 enum Month {
-	NullMonth =  0,
-	January   =  1,
-	February  =  2,
-	March     =  3,
-	April     =  4,
-	May       =  5,
-	June      =  6,
-	July      =  7,
-	August    =  8,
-	September =  9,
-	October   = 10,
-	November  = 11,
-	December  = 12,
+	January   =  0,
+	February  =  1,
+	March     =  2,
+	April     =  3,
+	May       =  4,
+	June      =  5,
+	July      =  6,
+	August    =  7,
+	September =  8,
+	October   =  9,
+	November  = 10,
+	December  = 11,
 };
 
 enum Day {
@@ -85,7 +84,7 @@ u16 get_days_in_month(Month month, bool leap) {
 			else return 28;
 			break;
 		default:
-			return NullMonth;
+			return 0;
 	}
 }
 
@@ -97,14 +96,14 @@ struct MonthAndDay {
 
 struct TimeAndDate {
 	private:
-	u32 seconds;
+	u16 minutes;
 	u16 days;
 	u16 year;
 	
 	public:
-	static TimeAndDate build(u32 seconds, u16 days, u16 year) {
-		days += seconds / SECONDS_IN_DAY;
-		seconds %= SECONDS_IN_DAY;
+	static TimeAndDate build(u16 minutes, u16 days, u16 year) {
+		days += minutes / MINUTES_IN_DAY;
+		minutes %= MINUTES_IN_DAY;
 		
 		u16 days_in_year;
 		while (days >= (days_in_year = get_days_in_year(year))) {
@@ -113,15 +112,18 @@ struct TimeAndDate {
 		}
 		
 		TimeAndDate output;
-		output.seconds = seconds;
+		output.minutes = minutes;
 		output.days = days;
 		output.year = year;
 		return output;
 	}
 	
-	u32 get_second_in_day() { return this->seconds; }
+	u16 get_minute_in_day() { return this->minutes; }
 	u16 get_day_in_year() { return this->days; }
 	u16 get_year() { return this->year; }
+	
+	u16 get_minute() { return this->minutes % 60; }
+	u16 get_hour() { return this->minutes / 60; }
 	
 	MonthAndDay get_month_and_day() {
 		Month month = January;
@@ -149,7 +151,6 @@ struct TimeAndDate {
 		// Find a true modulo since % is actually remainder
 		return (Day) ((day_count % 7 + 7) % 7);
 	}
-	
 };
 
 
