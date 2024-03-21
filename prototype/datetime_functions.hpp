@@ -13,12 +13,12 @@ bool is_leap_year(u16 year) {
 	return false;
 }
 
-u16 get_days_in_year(u16 year) {
+u16 find_days_in_year(u16 year) {
 	if (is_leap_year(year)) return 366;
 	else return 365;
 }
 
-u16 get_days_in_month(Month month, bool leap) {
+u16 find_days_in_month(Month month, bool leap) {
 	switch (month) {
 		case January:
 		case March:
@@ -44,7 +44,33 @@ u16 get_days_in_month(Month month, bool leap) {
 	}
 }
 
+i32 find_day_of_year(Month month, i32 day_of_month, i32 year) {
+	bool leap = is_leap_year(year);
+	u16 days_this_month;
+	
+	while (day_of_month > (days_this_month = find_days_in_month(month, leap))) {
+		day_of_month -= days_this_month;
+		if (month == December) {
+			month = January;
+			year += 1;
+			leap = is_leap_year(year);
+		} else month = (Month)((u32) month + 1);
+	}
+	
+	while (day_of_month <= 0) {
+		day_of_month += find_days_in_month(month, leap);
+		if (month == January) {
+			month = December;
+			year -= 1;
+			leap = is_leap_year(year);
+		} else month = (Month)((u32) month - 1);
+	}
+	
+	return day_of_month - 1;
+}
 
+
+// needed for the function that calculates both at once
 struct MonthAndDay {
 	Month month;
 	u16 day;
@@ -59,18 +85,19 @@ struct TimeAndDate {
 	
 	public:
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
+		// extraneous minute values roll over to the day number
 		i32 extra_days = floor((f64) minute / MINUTES_IN_DAY);
 		minute -= extra_days * MINUTES_IN_DAY;
 		day += extra_days;
 		
+		// extraneous day values roll over to the year
 		u16 days_in_year;
-		while (day >= (days_in_year = get_days_in_year(year))) {
+		while (day >= (days_in_year = find_days_in_year(year))) {
 			day -= days_in_year;
 			year += 1;
 		}
-		
 		while (day < 0) {
-			day += get_days_in_year(year);
+			day += find_days_in_year(year);
 			year -= 1;
 		}
 		
@@ -79,6 +106,10 @@ struct TimeAndDate {
 		output.day = day;
 		output.year = year;
 		return output;
+	}
+	
+	static TimeAndDate build_from_month(i32 minute, i32 day, Month month, i32 year) {
+		TimeAndDate::build(minute, find_day_of_year(month, day, year), year);
 	}
 	
 	static TimeAndDate now() {
@@ -93,26 +124,27 @@ struct TimeAndDate {
 		return output;
 	}
 	
-	inline u16 get_minute_in_day() { return this->minute; }
-	inline u16 get_day_in_year() { return this->day; }
+	inline u16 get_minute_of_day() { return this->minute; }
+	inline u16 get_day_of_year() { return this->day; }
 	inline u16 get_year() { return this->year; }
 	
 	inline u16 get_minute() { return this->minute % 60; }
 	inline u16 get_hour() { return this->minute / 60; }
 	
-	MonthAndDay get_month_and_day() {
+	MonthAndDay get_month_and_day() { // these are together since it's basically the same computation
 		Month month = January;
 		bool leap = is_leap_year(this->year);
 		u16 days_remaining = this->day;
 		u16 days_this_month;
-		while (days_remaining >= (days_this_month = get_days_in_month(month, leap))) {
+		while (days_remaining >= (days_this_month = find_days_in_month(month, leap))) {
 			days_remaining -= days_this_month;
 			month = (Month)((u32) month + 1);
 		}
-		return MonthAndDay { month, (u16)(days_remaining + 1) };
+		return MonthAndDay { month, (u16) (days_remaining + 1) }; // this day number is 1 based because that's how month dates work
 	}
 	
 	Day get_day_of_week() {
+		// base all week days off of january 1st 2000
 		i32 year_diff = this->year - 2000;
 		i32 optional_one = (i32) (year_diff > 0);
 		
