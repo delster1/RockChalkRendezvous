@@ -22,8 +22,16 @@ struct time_block {
     repeat_attr repeat_interval;
 };
 
-struct calendar { // contains busy times only! - happy to
+struct calendar { // contains busy times only! - happy to discuss data structure for this tho
     std::vector<time_block> busy_times;
+
+    /* will probably contain functions for:
+        - getting busy times for a certain day
+        - getting busy times for a certain time range
+        - adding busy times ensuring they're valid
+        - removing busy times
+        - etc.
+    */
 };
 
 int main () {
