@@ -9,12 +9,6 @@ struct repeat_attr {
     // thinking we can handle the none case when repeat days are 0
     unsigned short days;
 };
-// bens time and date - changed to minutes b/c it might be simpler - happy to discuss though
-struct time_and_date {
-    unsigned int minutes;
-    unsigned short days;
-    unsigned short year;
-};
 
 struct time_block { 
     TimeAndDate start;
