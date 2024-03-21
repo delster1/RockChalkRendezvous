@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include "../definitions.hpp"
 
 struct repeat_attr {
     // thinking we can handle the none case when repeat days are 0
@@ -16,21 +17,21 @@ struct time_and_date {
 };
 
 struct time_block { 
-    time_and_date start;
-    time_and_date end;
+    TimeAndDate start;
+    TimeAndDate end;
     repeat_attr repeat_interval;
 };
 
-struct calendar { // contains busy times only! - happy to change what data structure we use
+struct calendar { // contains busy times only! - happy to
     std::vector<time_block> busy_times;
 };
 
 int main () {
     // testing - making simple block between 6 am - 8 am
-    time_and_date start_time = {360, 0, 0}; 
-    time_and_date end_time = {480, 0, 0};
+    TimeAndDate start_time = TimeAndDate::build(360, 0, 2024); 
+    TimeAndDate end_time = TimeAndDate::build(480, 0, 2024);
     time_block busy_time = {start_time, end_time, 0};
-    calendar my_cal = {};
+    calendar my_cal = {};   
     my_cal.busy_times.push_back(busy_time);
     return 0;
 }
