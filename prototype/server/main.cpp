@@ -48,7 +48,9 @@ int main() {
 	// Navigating to http://localhost:8080 will invoke handle_request().
 	while (getchar() != 'q');
 	
-	for (int i = 0; i <= 10; i++) printf("%d ", TimeAndDate::build(0, 0, 1995 + i).get_day_of_week());
+	auto now = TimeAndDate::now();
+	MonthAndDay md = now.get_month_and_day();
+	printf("%s %d, %s, %d:%d", MONTH_NAMES[md.month], md.day, DAY_NAMES[now.get_day_of_week()], now.get_hour(), now.get_minute());
 	
 	// Stop the server.
 	mg_stop(ctx);
