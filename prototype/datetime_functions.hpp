@@ -108,11 +108,11 @@ struct TimeAndDate {
 		return output;
 	}
 	
-	static TimeAndDate build_from_month(i32 minute, i32 day, Month month, i32 year) {
-		TimeAndDate::build(minute, find_day_of_year(month, day, year), year);
+	inline static TimeAndDate build_from_month(i32 minute, i32 day, Month month, i32 year) {
+		return TimeAndDate::build(minute, find_day_of_year(month, day, year), year);
 	}
 	
-	static TimeAndDate now() {
+	inline static TimeAndDate now() {
 		time_t system_time;
 		time(&system_time);
 		struct tm timeinfo = *gmtime(&system_time);
@@ -120,7 +120,7 @@ struct TimeAndDate {
 		TimeAndDate output;
 		output.minute = timeinfo.tm_hour * 60 + timeinfo.tm_min;
 		output.day = timeinfo.tm_yday;
-		output.year = timeinfo.tm_year;
+		output.year = timeinfo.tm_year + 1900; // system time year is relative to 1900
 		return output;
 	}
 	
@@ -153,7 +153,8 @@ struct TimeAndDate {
 					  + year_diff
 					  + (year_diff - optional_one) / 4
 					  - (year_diff - optional_one) / 100
-					  + (year_diff - optional_one) / 400;
+					  + (year_diff - optional_one) / 400
+					  + optional_one;
 		
 		// Find a true modulo since % is actually remainder
 		return (Day) ((day_count % 7 + 7) % 7);
