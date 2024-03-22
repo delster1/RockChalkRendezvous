@@ -4,61 +4,22 @@
 
 #include "../definitions.hpp"
 
+using namespace httplib;
 
-// This function will be called by civetweb on every new request.
-static int handle_request(struct mg_connection* connection) {
-	const struct mg_request_info* request_info = mg_get_request_info(connection);
-	char content[100];
-	
-	
-	
-	// Prepare the message we're going to send
-	int content_length = snprintf(content, sizeof(content),
-		"Rock Chalk Rendezvous first networking test! Remote port: %d",
-		request_info->remote_port
-	);
-	
-	// Send HTTP reply to the client
-	mg_printf(connection,
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/plain\r\n"
-		"Content-Length: %d\r\n"	// Always set Content-Length
-		"\r\n"
-		"%s",
-		content_length, content
-	);
-
-	// Returning non-zero tells civetweb that our function has replied to
-	// the client, and civetweb should not send client any more data.
-	return 1;
-}
 
 int main() {
+	Server svr;
 	
-	// Prepare callbacks structure. We have only one callback, the rest are NULL.
-	struct mg_callbacks callbacks;
-	memset(&callbacks, 0, sizeof(callbacks));
-	callbacks.begin_request = handle_request;
-	
-	// List of options. Last element must be NULL.
-	const char* options[] = {"listening_ports", "8080", NULL};
-	
-	// Start the web server.
-	struct mg_context* ctx = mg_start(&callbacks, NULL, options);
+	svr.Get("/", [](const Request & /*req*/, Response &res) {
+		res.set_content("Hello World!", "text/plain");
+	});
 	
 	printf("Server started.\nCurrent time:\n");
 	auto now = TimeAndDate::now();
 	MonthAndDay md = now.get_month_and_day();
 	printf("%s %d %d, %s, %d:%d\n", MONTH_NAMES[md.month], md.day, now.get_year(), DAY_NAMES[now.get_day_of_week()], now.get_hour(), now.get_minute());
-	printf("\nEnter 'q' to stop the server.");
-	
-	// Wait until user enters 'q'. Server is running in separate thread.
-	// Navigating to http://localhost:8080 will invoke handle_request().
-	while (getchar() != 'q');
 	
 	
-	// Stop the server.
-	mg_stop(ctx);
-	
-	return 0;
+	svr.listen("0.0.0.0", 8080);
 }
+
