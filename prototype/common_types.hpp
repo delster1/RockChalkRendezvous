@@ -1,6 +1,7 @@
 #ifndef RCR_COMMON_TYPES_DEFINITIONS
 #define RCR_COMMON_TYPES_DEFINITIONS
 
+#define let auto
 
 #define i32 int
 #define i16 short

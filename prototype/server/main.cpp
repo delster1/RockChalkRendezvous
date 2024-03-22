@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "civetweb.h"
+#include "httplib.h"
 
 #include "../definitions.hpp"
 
@@ -9,6 +9,8 @@
 static int handle_request(struct mg_connection* connection) {
 	const struct mg_request_info* request_info = mg_get_request_info(connection);
 	char content[100];
+	
+	
 	
 	// Prepare the message we're going to send
 	int content_length = snprintf(content, sizeof(content),
@@ -44,18 +46,16 @@ int main() {
 	// Start the web server.
 	struct mg_context* ctx = mg_start(&callbacks, NULL, options);
 	
+	printf("Server started.\nCurrent time:\n");
+	auto now = TimeAndDate::now();
+	MonthAndDay md = now.get_month_and_day();
+	printf("%s %d %d, %s, %d:%d\n", MONTH_NAMES[md.month], md.day, now.get_year(), DAY_NAMES[now.get_day_of_week()], now.get_hour(), now.get_minute());
+	printf("\nEnter 'q' to stop the server.");
+	
 	// Wait until user enters 'q'. Server is running in separate thread.
 	// Navigating to http://localhost:8080 will invoke handle_request().
 	while (getchar() != 'q');
 	
-	/*for (int year = 2000; year <= 2024; year++) {
-		auto jan1 = TimeAndDate::build(0, 0, year);
-		printf("%d, %s\n", year, DAY_NAMES[jan1.get_day_of_week()]);
-	}*/
-	
-	auto now = TimeAndDate::now();
-	MonthAndDay md = now.get_month_and_day();
-	printf("%s %d %d, %s, %d:%d\n", MONTH_NAMES[md.month], md.day, now.get_year(), DAY_NAMES[now.get_day_of_week()], now.get_hour(), now.get_minute());
 	
 	// Stop the server.
 	mg_stop(ctx);

@@ -1,7 +1,6 @@
 
 LIB_FOLDER = ../../lib
-LIBHTTP_INCLUDE = $(LIB_FOLDER)/libhttp/include
-LIBHTTP_SOURCE = $(LIB_FOLDER)/libhttp/src/civetweb.c
+HTTPLIB_INCLUDE = $(LIB_FOLDER)/cpp-httplip
 
 main:
-	gcc -o server.exe -I$(LIBHTTP_INCLUDE) main.cpp $(LIBHTTP_SOURCE) -lws2_32
+	gcc -o server.exe -I$(HTTPLIB_INCLUDE) main.cpp -lws2_32
