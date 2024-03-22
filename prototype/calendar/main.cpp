@@ -8,23 +8,6 @@
 #include "../definitions.hpp"
 #include "../datetime_functions.hpp"
 
-u32 days_difference( TimeAndDate& date1,  TimeAndDate& date2) {
-    // Calculate the total number of days for each date from year 0
-    u32 totalDays1 = 0;
-    for (u32 year = 0; year < date1.get_year(); ++year) {
-        totalDays1 += find_days_in_year(year);
-    }
-    totalDays1 += date1.get_day_of_year();
-
-    u32 totalDays2 = 0;
-    for (u32 year = 0; year < date2.get_year(); ++year) {
-        totalDays2 += find_days_in_year(year);
-    }
-    totalDays2 += date2.get_day_of_year();
-
-    // Return the absolute difference between the two totals
-    return totalDays2 - totalDays1;
-}
 
 enum class RepeatType {
     NoRepeat,
