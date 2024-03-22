@@ -58,7 +58,7 @@ struct repeat_attr {
 struct time_block { 
     TimeAndDate start;
     TimeAndDate end;
-    std::vector<RepeatType> repeat_intervals; // list of repeat attributes - determines multiple repeats - e.g: monthly and daily
+    std::vector<repeat_attr> repeat_interval; // list of repeat attributes - determines multiple repeats - e.g: monthly and daily
 };
 
 struct calendar { // contains busy times only! - happy to discuss data structure for this tho
@@ -91,29 +91,26 @@ struct calendar { // contains busy times only! - happy to discuss data structure
     }
 
     void update_repeats(time_block time) {
-        for (auto& repeat : time.repeat_intervals) {
-            switch (repeat) {
+        for (auto& repeat : time.repeat_interval) {
+            switch (repeat.type) {
                 case RepeatType::NoRepeat:
                     break;
                 case RepeatType::Daily:
-                    // Add repeated time blocks for each day 
-                    
+                    // Add repeated time blocks for each day
                     break;
                 case RepeatType::Weekly:
                     // Add repeated time blocks for each week
-                    
                     break;
                 case RepeatType::Monthly:
                     // Add repeated time blocks for each month
-                   
                     break;
                 case RepeatType::Yearly:
                     // Add repeated time blocks for each year
-                    
                     break;
                 case RepeatType::RepeatBlock:
                     // Add repeated time block with the same start and end time
-                    
+                    // time_block repeated_time = {time.start, time.end, {RepeatType::NoRepeat}};
+                    // add_time(repeated_time);
                     break;
             }
         }
@@ -121,10 +118,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
 
     void add_time(time_block to_add) {
         if (is_valid_time(to_add)) {
-
             busy_times.push_back(to_add);
-            // UPDATE REPEATS NOT IMPLEMENTED YET
-            update_repeats(to_add); // updates calendar with repeated time blocks depending on attributes in to_add obj
         }
         else {
             std::cout << "Invalid time!\n";
@@ -136,21 +130,28 @@ struct calendar { // contains busy times only! - happy to discuss data structure
 int main () {
     calendar my_cal = {};   
     // testing - making simple block between 6 am - 8 am
-    TimeAndDate start_time = TimeAndDate::build(360, 0, 2024); 
-    TimeAndDate end_time = TimeAndDate::build(480, 0, 2024);
-    time_block busy_time = {start_time, end_time, {RepeatType::NoRepeat}};
-    my_cal.add_time(busy_time);
+    TimeAndDate startTime = TimeAndDate::build(360, 1, 2024); // Assuming 6:00 AM on the first day of the year 2024
+    TimeAndDate endTime = TimeAndDate::build(480, 1, 2024); // Assuming 8:00 AM on the same day
+
+    // Adding a non-repeating time block
+    time_block nonRepeatingBlock = {startTime, endTime, {repeat_attr::buildNone(startTime, endTime)}};
+    my_cal.add_time(nonRepeatingBlock);
+
+    // Adding a daily repeating time block
+    time_block dailyRepeatingBlock = {startTime, endTime, {repeat_attr::buildDaily(startTime, endTime, 1)}};
+    my_cal.add_time(dailyRepeatingBlock);
 
     // testing making an invalid time
     TimeAndDate start_time_test = TimeAndDate::build(580, 0 , 2024);
     TimeAndDate end_time_test = TimeAndDate::build(580, 0 , 2024);
-    time_block busy_time_test = {start_time_test, end_time_test, {RepeatType::NoRepeat}};
+    time_block busy_time_test = {start_time_test, end_time_test, {repeat_attr::buildNone(start_time_test, end_time_test)}};
     my_cal.add_time(busy_time_test);
     
     // testing adding an overlapped time 
-    TimeAndDate start_time_test_2 = TimeAndDate::build(380, 0, 2024); 
-    TimeAndDate end_time_test_2 = TimeAndDate::build(470, 0, 2024);
-    time_block busy_time_test_2 = {start_time_test_2, end_time_test_2, {RepeatType::NoRepeat}};
+    TimeAndDate start_time_test_2 = TimeAndDate::build(380, 1, 2024); 
+    TimeAndDate end_time_test_2 = TimeAndDate::build(470, 1, 2024);
+    time_block busy_time_test_2 = {start_time_test_2, end_time_test_2, {repeat_attr::buildNone(start_time_test_2, end_time_test_2)}};
+
     my_cal.add_time(busy_time_test_2);
     return 0;
 }
