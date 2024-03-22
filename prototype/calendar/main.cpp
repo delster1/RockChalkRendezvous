@@ -8,6 +8,24 @@
 #include "../definitions.hpp"
 #include "../datetime_functions.hpp"
 
+u32 days_difference( TimeAndDate& date1,  TimeAndDate& date2) {
+    // Calculate the total number of days for each date from year 0
+    u32 totalDays1 = 0;
+    for (u32 year = 0; year < date1.get_year(); ++year) {
+        totalDays1 += find_days_in_year(year);
+    }
+    totalDays1 += date1.get_day_of_year();
+
+    u32 totalDays2 = 0;
+    for (u32 year = 0; year < date2.get_year(); ++year) {
+        totalDays2 += find_days_in_year(year);
+    }
+    totalDays2 += date2.get_day_of_year();
+
+    // Return the absolute difference between the two totals
+    return totalDays2 - totalDays1;
+}
+
 enum class RepeatType {
     NoRepeat,
     Daily,
@@ -19,33 +37,19 @@ enum class RepeatType {
 
 struct repeat_attr {
     RepeatType type;
-    TimeAndDate start;
-    TimeAndDate end;
+    u16 duration;
     // u16 interval_days; - For Daily repetition - later 
 
     // Private constructor to force using build functions for clarity
     private:
-    repeat_attr(RepeatType repeatType, const TimeAndDate& start, const TimeAndDate& end)
-        : type(repeatType), start(start), end(end) {}
+    repeat_attr(RepeatType repeatType, u16 duration)
+        : type(repeatType),duration(duration) {}
 
     public:
     // Static build functions for different repeat types
-    static repeat_attr build_repeat_attr(RepeatType repeatType, const TimeAndDate& start, const TimeAndDate& end) {
-        switch (repeatType) {
-            case RepeatType::NoRepeat:
-                return {RepeatType::NoRepeat, start, end};
-            case RepeatType::Daily:
-                return {RepeatType::Daily, start, end};
-            case RepeatType::Weekly:
-                return {RepeatType::Weekly, start, end};
-            case RepeatType::Monthly:
-                return {RepeatType::Monthly, start, end};
-            case RepeatType::Yearly:
-                return {RepeatType::Yearly, start, end};
-            case RepeatType::RepeatBlock:
-                return {RepeatType::RepeatBlock, start, end};
-
-        }
+    
+    static repeat_attr build_repeat_attr(RepeatType repeatType,  u16 duration) {
+        return {repeatType, duration};
     }
 };
 
@@ -61,8 +65,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
     /* will probably contain functions for:
         - getting busy times for a certain day
         - getting busy times for a certain time range
-        - adding busy times ensuring they're valid -
-        - removing busy times
+        - removing busy times - do we really need this?
         - comparison function for two times to sort
         - etc.
     */
@@ -104,24 +107,28 @@ int main () {
     TimeAndDate endTime = TimeAndDate::build(480, 1, 2024); // Assuming 8:00 AM on the same day
 
     // Adding a non-repeating time block
-    time_block nonRepeatingBlock = {startTime, endTime, repeat_attr::build_repeat_attr(RepeatType::NoRepeat, startTime, endTime)};
+    time_block nonRepeatingBlock = {startTime, endTime, repeat_attr::build_repeat_attr(RepeatType::NoRepeat, 0)};
     my_cal.add_time(nonRepeatingBlock);
+	printf("%d %d %d:%d -> %d %d %d:%d\n",  my_cal.busy_times[0].start.get_year(), my_cal.busy_times[0].start.get_day_of_year(), my_cal.busy_times[0].start.get_hour(), my_cal.busy_times[0].start.get_minute(),  my_cal.busy_times[0].end.get_year(), my_cal.busy_times[0].end.get_day_of_year(), my_cal.busy_times[0].end.get_hour(), my_cal.busy_times[0].end.get_minute());
 
     // Adding a daily repeating time block
-    time_block dailyRepeatingBlock = {startTime, endTime, repeat_attr::build_repeat_attr(RepeatType::Daily, startTime, endTime)};
+    time_block dailyRepeatingBlock = {startTime, endTime, repeat_attr::build_repeat_attr(RepeatType::Daily, 100)};
     my_cal.add_time(dailyRepeatingBlock);
 
     // testing making an invalid time
     TimeAndDate start_time_test = TimeAndDate::build(580, 0 , 2024);
     TimeAndDate end_time_test = TimeAndDate::build(580, 0 , 2024);
-    time_block busy_time_test = {start_time_test, end_time_test, repeat_attr::build_repeat_attr(RepeatType::NoRepeat, start_time_test, end_time_test)};
+    time_block busy_time_test = {start_time_test, end_time_test, repeat_attr::build_repeat_attr(RepeatType::NoRepeat, 0)};
     my_cal.add_time(busy_time_test);
     
     // testing adding an overlapped time 
-    TimeAndDate start_time_test_2 = TimeAndDate::build(380, 1, 2024); 
-    TimeAndDate end_time_test_2 = TimeAndDate::build(470, 1, 2024);
-    time_block busy_time_test_2 = {start_time_test_2, end_time_test_2, repeat_attr::build_repeat_attr( RepeatType::NoRepeat,start_time_test_2, end_time_test_2)};
+    TimeAndDate start_time_test_2 = TimeAndDate::build(500, 1, 2024); 
+    TimeAndDate end_time_test_2 = TimeAndDate::build(560, 1, 2024);
+    time_block busy_time_test_2 = {start_time_test_2, end_time_test_2, repeat_attr::build_repeat_attr( RepeatType::NoRepeat,0)};
 
     my_cal.add_time(busy_time_test_2);
+    // ignore this huge print stmts, just testing seeing that everything is in correctly
+	printf("%d %d %d:%d -> %d %d %d:%d\n",  my_cal.busy_times[1].start.get_year(), my_cal.busy_times[1].start.get_day_of_year(), my_cal.busy_times[1].start.get_hour(), my_cal.busy_times[1].start.get_minute(),  my_cal.busy_times[1].end.get_year(), my_cal.busy_times[1].end.get_day_of_year(), my_cal.busy_times[1].end.get_hour(), my_cal.busy_times[1].end.get_minute());
+
     return 0;
 }
