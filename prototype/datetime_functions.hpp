@@ -161,7 +161,7 @@ struct TimeAndDate {
 	}
 	
 	// don't use this on times more than 4085 years apart or else
-	i32 minutes_since(const TimeAndDate &t) {
+	i32 minutes_since(const TimeAndDate& t) {
 		i32 minute_diff = this->minute - t.minute + (this->day - t.day) * MINUTES_IN_DAY;
 		
 		for (i32 year = t.year; year <= this->year; year++) {
@@ -172,6 +172,31 @@ struct TimeAndDate {
 		}
 		
 		return minute_diff;
+	}
+	
+	inline bool operator==(const TimeAndDate& other) {
+		return this->year == other.year && this->day == other.day && this->minute == other.minute;
+	}
+	inline bool operator!=(const TimeAndDate& other) {
+		return !(*this == other);
+	}
+	inline bool operator>(const TimeAndDate& other) {
+		if (this->year != other.year) return this->year > other.year;
+		if (this->day != other.day) return this->day > other.day;
+		if (this->minute != other.minute) return this->minute > other.minute;
+		return false;
+	}
+	inline bool operator<(const TimeAndDate& other) {
+		if (this->year != other.year) return this->year < other.year;
+		if (this->day != other.day) return this->day < other.day;
+		if (this->minute != other.minute) return this->minute < other.minute;
+		return false;
+	}
+	inline bool operator>=(const TimeAndDate& other) {
+		return !(*this < other);
+	}
+	inline bool operator<=(const TimeAndDate& other) {
+		return !(*this > other);
 	}
 	
 };
