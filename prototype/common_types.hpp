@@ -6,8 +6,7 @@
 #define i16 short
 #define u32 unsigned int
 #define u16 unsigned short
-#define f32 float
-#define f64 double
+
 
 
 template <typename T>

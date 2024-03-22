@@ -86,7 +86,7 @@ struct TimeAndDate {
 	public:
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
 		// extraneous minute values roll over to the day number
-		i32 extra_days = floor((f64) minute / MINUTES_IN_DAY);
+		i32 extra_days = floor((double) minute / MINUTES_IN_DAY);
 		minute -= extra_days * MINUTES_IN_DAY;
 		day += extra_days;
 		
@@ -160,6 +160,19 @@ struct TimeAndDate {
 		return (Day) ((day_count % 7 + 7) % 7);
 	}
 	
+	// don't use this on times more than 4085 years apart or else
+	i32 minutes_since(const TimeAndDate &t) {
+		i32 minute_diff = this->minute - t.minute + (this->day - t.day) * MINUTES_IN_DAY;
+		
+		for (i32 year = t.year; year <= this->year; year++) {
+			minute_diff += find_days_in_year(year) * MINUTES_IN_DAY;
+		}
+		for (i32 year = this->year; year <= t.year; year++) {
+			minute_diff -= find_days_in_year(year) * MINUTES_IN_DAY;
+		}
+		
+		return minute_diff;
+	}
 	
 };
 
