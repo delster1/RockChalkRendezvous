@@ -83,6 +83,10 @@ struct TimeAndDate {
 	u16 day;
 	i32 year;
 	
+	// default constructors for other methods to use
+	TimeAndDate() : minute(0), day(0), year(0) {}
+	TimeAndDate(u16 minute, u16 day, i32 year) : minute(minute), day(day), year(year) {}
+	
 	public:
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
 		// extraneous minute values roll over to the day number
@@ -101,15 +105,19 @@ struct TimeAndDate {
 			year -= 1;
 		}
 		
-		TimeAndDate output;
-		output.minute = minute;
-		output.day = day;
-		output.year = year;
-		return output;
+		return { minute, day, year };
 	}
 	
-	inline static TimeAndDate build_from_month(i32 minute, i32 day, Month month, i32 year) {
+	// September 31 -> October 1
+	inline static TimeAndDate build_from_month_wrap_day(i32 minute, i32 day, Month month, i32 year) {
 		return TimeAndDate::build(minute, find_day_of_year(month, day, year), year);
+	}
+	
+	// September 31 -> September 30
+	inline static TimeAndDate build_from_month(i32 minute, i32 day, Month month, i32 year) {
+		u16 days_this_month = find_days_in_month(month, is_leap_year(year));
+		if (day > days_this_month) day = days_this_month;
+		return TimeAndDate::build_from_month_wrap_day(minute, day, month, year);
 	}
 	
 	inline static TimeAndDate now() {
@@ -172,6 +180,43 @@ struct TimeAndDate {
 		}
 		
 		return minute_diff;
+	}
+	
+	// functions for adding time correctly
+	// see comments for explainations of similar functions
+	
+	TimeAndDate add_minutes(const i32 minutes) {
+		return TimeAndDate::build(this->minute + minutes, this->day, this->year);
+	}
+	TimeAndDate add_days(const i32 days) {
+		return TimeAndDate::build(this->minute, this->day + days, this->year);
+	}
+	// will move the day down to stay in the correct month
+	// i.e. August 31 + 1 month = September 30
+	TimeAndDate add_months(const i32 months) {
+		MonthAndDay md = this->get_month_and_day();
+		return TimeAndDate::build_from_month(this->minute, md.day,
+			(Month) ((((i32) md.month + months) % 12 + 12) % 12),
+		this->year);
+	}
+	// will wrap around to the next month
+	// i.e. August 31 + 1 month = September 31 -> October 1
+	TimeAndDate add_months_wrap_day(const i32 months) {
+		MonthAndDay md = this->get_month_and_day();
+		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
+			(Month) ((((i32) md.month + months) % 12 + 12) % 12),
+		this->year);
+	}
+	// leap day won't shift everything off by a day
+	// February 29 2024 + 1 year = February 28 2025
+	TimeAndDate add_years(const i32 years) {
+		MonthAndDay md = this->get_month_and_day();
+		return TimeAndDate::build_from_month(this->minute, md.day, md.month, this->year + years);
+	}
+	// February 29 2024 + 1 year = March 1 2025
+	TimeAndDate add_years_wrap_day(const i32 years) {
+		MonthAndDay md = this->get_month_and_day();
+		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day, md.month, this->year + years);
 	}
 	
 	inline bool operator==(const TimeAndDate& other) {
