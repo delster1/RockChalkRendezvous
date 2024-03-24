@@ -17,7 +17,9 @@ int main() {
 			
 			result = client.Post("/get-data", "client says hi", "text/plain");
 			
-			printf("Post response: %s\n", result->body.c_str());
+			std::istringstream parser(result->body);
+			
+			std::cout << "Post response (" << result->body.length() << "): " << TimeAndDate::decode(parser).unwrap().to_string().c_str() << "\n";
 			
 		}
 	} else {
