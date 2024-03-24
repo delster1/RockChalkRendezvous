@@ -105,7 +105,7 @@ struct TimeAndDate {
 			year -= 1;
 		}
 		
-		return { minute, day, year };
+		return { (i32) minute, (i32) day, year };
 	}
 	
 	// September 31 -> October 1
@@ -183,7 +183,7 @@ struct TimeAndDate {
 	}
 	
 	// functions for adding time correctly
-	// see comments for explainations of similar functions
+	// see comments for explanations of similar functions
 	
 	TimeAndDate add_minutes(const i32 minutes) {
 		return TimeAndDate::build(this->minute + minutes, this->day, this->year);
@@ -200,7 +200,7 @@ struct TimeAndDate {
 		this->year);
 	}
 	// will wrap around to the next month
-	// i.e. August 31 + 1 month = September 31 -> October 1
+	// i.e. August 31 + 1 month = October 1
 	TimeAndDate add_months_wrap_day(const i32 months) {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,

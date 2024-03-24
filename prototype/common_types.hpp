@@ -1,13 +1,11 @@
 #ifndef RCR_COMMON_TYPES_DEFINITIONS
 #define RCR_COMMON_TYPES_DEFINITIONS
 
-#define let auto
-
 #define i32 int
 #define i16 short
 #define u32 unsigned int
 #define u16 unsigned short
-
+#define usize unsigned long long
 
 
 template <typename T>
