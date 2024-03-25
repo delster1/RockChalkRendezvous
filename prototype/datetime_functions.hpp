@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include "common_types.hpp"
 #include "datetime_constants.hpp"
 
@@ -84,10 +85,11 @@ struct TimeAndDate {
 	i32 year;
 	
 	// default constructors for other methods to use
-	TimeAndDate() : minute(0), day(0), year(0) {}
-	TimeAndDate(u16 minute, u16 day, i32 year) : minute(minute), day(day), year(year) {}
+	inline TimeAndDate(u16 minute, u16 day, i32 year) : minute(minute), day(day), year(year) {}
 	
 	public:
+	inline TimeAndDate() : minute(0), day(0), year(0) {}
+	
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
 		// extraneous minute values roll over to the day number
 		i32 extra_days = floor((double) minute / MINUTES_IN_DAY);
@@ -105,7 +107,7 @@ struct TimeAndDate {
 			year -= 1;
 		}
 		
-		return { minute, day, year };
+		return { (i32) minute, (i32) day, year };
 	}
 	
 	// September 31 -> October 1
@@ -138,6 +140,27 @@ struct TimeAndDate {
 	
 	inline u16 get_minute() { return this->minute % 60; }
 	inline u16 get_hour() { return this->minute / 60; }
+	
+	std::string encode() {
+		return std::to_string(this->minute) + " " + std::to_string(this->day) + " " + std::to_string(this->year);
+	}
+	
+	static Option<TimeAndDate> decode(std::istringstream& s) {
+		i32 minute, day, year;
+		if (s >> minute && s >> day && s >> year) {
+			return Option<TimeAndDate>::some(TimeAndDate::build(minute, day, year));
+		} else {
+			s.clear();
+			return Option<TimeAndDate>::none();
+		}
+	}
+	
+	std::string to_string() {
+		MonthAndDay md = this->get_month_and_day();
+		char s[64] = {0};
+		snprintf(s, 64, "%d:%02d %s, %s %d %d", this->get_hour(), this->get_minute(), DAY_NAMES[this->get_day_of_week()], MONTH_NAMES[md.month], md.day, this->year);
+		return std::string(s);
+	}
 	
 	MonthAndDay get_month_and_day() { // these are together since it's basically the same computation
 		Month month = January;
@@ -183,7 +206,7 @@ struct TimeAndDate {
 	}
 	
 	// functions for adding time correctly
-	// see comments for explainations of similar functions
+	// see comments for explanations of similar functions
 	
 	TimeAndDate add_minutes(const i32 minutes) {
 		return TimeAndDate::build(this->minute + minutes, this->day, this->year);
@@ -200,7 +223,7 @@ struct TimeAndDate {
 		this->year);
 	}
 	// will wrap around to the next month
-	// i.e. August 31 + 1 month = September 31 -> October 1
+	// i.e. August 31 + 1 month = October 1
 	TimeAndDate add_months_wrap_day(const i32 months) {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
