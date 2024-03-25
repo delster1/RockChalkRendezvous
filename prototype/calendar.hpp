@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 // TODO: 
 // - refactor decode - move to timeblock and refactor calendar decode as folloiws
 // - 
+=======
+#ifndef RCR_CALENDAR_DEFINITIONS
+#define RCR_CALENDAR_DEFINITIONS
+>>>>>>> c5ad4af6608e658e08b4951e3300a2e7075886e1
 
 #include <iostream>
 #include <fstream>
@@ -201,6 +206,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
             }
         });
     }
+<<<<<<< HEAD
 
     calendar decode(std::istringstream& s) {
         calendar decodedCal;
@@ -221,3 +227,10 @@ struct calendar { // contains busy times only! - happy to discuss data structure
     }
 };
 
+=======
+};
+
+
+
+#endif
+>>>>>>> c5ad4af6608e658e08b4951e3300a2e7075886e1

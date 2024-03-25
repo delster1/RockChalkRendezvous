@@ -26,7 +26,7 @@ struct Option {
 		return Option<T>(true, value);
 	}
 	inline static Option<T> none() {
-		T new_value;
+		T new_value; // T must have a public default constructor
 		return Option<T>(false, new_value);
 	}
 	
