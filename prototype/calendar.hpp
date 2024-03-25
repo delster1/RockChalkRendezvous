@@ -1,3 +1,6 @@
+#ifndef RCR_CALENDAR_DEFINITIONS
+#define RCR_CALENDAR_DEFINITIONS
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -119,3 +122,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         });
     }
 };
+
+
+
+#endif
