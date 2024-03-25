@@ -1,10 +1,6 @@
 #ifndef RCR_CALENDAR_DEFINITIONS
 #define RCR_CALENDAR_DEFINITIONS
 
-// TODO: 
-// - refactor decode - move to timeblock and refactor calendar decode as folloiws
-// - 
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -204,16 +200,21 @@ struct calendar { // contains busy times only! - happy to discuss data structure
             }
         });
     }
-    
+
     calendar decode(std::istringstream& s) {
         calendar decodedCal;
-        
-        
+        // read first line of string stream
+        // for each line: s
+            // separate repeat attr, start time block, end time block 
+            // decode first word - repeat attr
+            // decode start time block
+            // decode end time block
+
         return decodedCal;
     }
     
     
-    std::string encodeCalendar() {
+    std::string encode() {
         std::ostringstream oss;
         oss << busy_times.size() << "\n";
         for(auto& busy_time : busy_times) {
@@ -223,8 +224,6 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         return oss.str();
     }
 };
-
-
 
 
 
