@@ -1,11 +1,9 @@
-<<<<<<< HEAD
+#ifndef RCR_CALENDAR_DEFINITIONS
+#define RCR_CALENDAR_DEFINITIONS
+
 // TODO: 
 // - refactor decode - move to timeblock and refactor calendar decode as folloiws
 // - 
-=======
-#ifndef RCR_CALENDAR_DEFINITIONS
-#define RCR_CALENDAR_DEFINITIONS
->>>>>>> c5ad4af6608e658e08b4951e3300a2e7075886e1
 
 #include <iostream>
 #include <fstream>
@@ -123,7 +121,7 @@ struct time_block {
         }
         else {
             return Option<time_block>::none();
-        }          
+        }
     }
 
 
@@ -190,7 +188,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         for (auto& busy_time : busy_times) {
             if (within(start, end, busy_time.start, busy_time.end)) {
 	            // printf("%d %d %d:%d -> %d %d %d:%d\n",  busy_time.start.get_year(), busy_time.start.get_day_of_year(), busy_time.start.get_hour(), busy_time.start.get_minute(),  busy_time.end.get_year(), busy_time.end.get_day_of_year(), busy_time.end.get_hour(), busy_time.end.get_minute());
-
+                
                 out.push_back(busy_time);
             }
         }
@@ -206,31 +204,28 @@ struct calendar { // contains busy times only! - happy to discuss data structure
             }
         });
     }
-<<<<<<< HEAD
-
+    
     calendar decode(std::istringstream& s) {
         calendar decodedCal;
         
-
+        
         return decodedCal;
     }
-
+    
     
     std::string encodeCalendar() {
         std::ostringstream oss;
         oss << busy_times.size() << "\n";
         for(auto& busy_time : busy_times) {
-
+            
             oss << busy_time.encode() << "\n";
-        } 
+        }
         return oss.str();
     }
 };
 
-=======
-};
+
 
 
 
 #endif
->>>>>>> c5ad4af6608e658e08b4951e3300a2e7075886e1

@@ -150,7 +150,6 @@ struct TimeAndDate {
 		if (s >> minute && s >> day && s >> year) {
 			return Option<TimeAndDate>::some(TimeAndDate::build(minute, day, year));
 		} else {
-			s.clear();
 			return Option<TimeAndDate>::none();
 		}
 	}
