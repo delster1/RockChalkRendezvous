@@ -31,7 +31,7 @@ struct repeat_attr {
     private:
 
     public:
-    inline repeat_attr() : type(), duration_days() {}
+    inline repeat_attr() : type(), duration_days() {} // none constructor
 
     // Static build functions for different repeat types
     std::string repeaAttrToString(RepeatType type) {
@@ -68,10 +68,19 @@ struct repeat_attr {
         Option<RepeatType> type = stringToRepeatType(part);
         std::getline(s, part, ' '); // Get duration_days part
         u16 duration_days;
-        if (s >> duration_days && type.is_some()) {
+        try {
+            duration_days = static_cast<uint16_t>(std::stoi(part));
+        } catch (const std::invalid_argument& e) {
+    // Handle the case where the conversion cannot be performed
+    // because the input is not a valid number
+        } catch (const std::out_of_range& e) {
+    // Handle the case where the number is out of the int range
+        }
+        if (duration_days >= 0 && type.is_some()) {
             return Option<repeat_attr>::some(repeat_attr::build_repeat_attr(type.unwrap(), duration_days));
         }
         else {
+
             return Option<repeat_attr>::none();
         }
     }
@@ -89,29 +98,42 @@ struct time_block {
     inline time_block(TimeAndDate start, TimeAndDate end, repeat_attr repeat_interval) : start(start), end(end), repeat_interval(repeat_interval) {}
     public:
     inline time_block() : start(), end(), repeat_interval() {}
+
     std::string encode() {
         std::ostringstream oss;
-        oss << repeat_interval.encode() << " "<< start.encode() << " " << end.encode();
+        oss << repeat_interval.encode() << " "<< start.encode() << ":" << end.encode();
         return oss.str();
     }
 
     static Option<time_block> decode(std::istringstream& s) {
+        std::string repeatTypeString;
         std::string repeatIntervalString;
         std::string timeBlockStartString;
         std::string timeBlockEndString;
 
+        std::getline(s, repeatTypeString, ' ');
         std::getline(s, repeatIntervalString, ' ');
-        std::getline(s, timeBlockStartString, ' ');
-        std::getline(s, timeBlockEndString, ' ');
+        std::getline(s, timeBlockStartString, ':');
 
-        std::istringstream repeatIntervalStream(repeatIntervalString);
+        std::getline(s, timeBlockEndString, '\n');
+        std::istringstream repeatStream(repeatTypeString + ' '+ repeatIntervalString); // ik this code is cursed - j threw the delim in lol
         std::istringstream timeBlockStartStream(timeBlockStartString);
         std::istringstream timeBlockEndStream(timeBlockEndString);
 
-        Option<repeat_attr> repeat = repeat_attr::decode(repeatIntervalStream);
+        Option<repeat_attr> repeat = repeat_attr::decode(repeatStream);
+        
         Option<TimeAndDate> start = TimeAndDate::decode(timeBlockStartStream);
         Option<TimeAndDate> end = TimeAndDate::decode(timeBlockEndStream);
 
+        u16 duration_days;
+        try {
+            duration_days = static_cast<uint16_t>(std::stoi(repeatIntervalString));
+        } catch (const std::invalid_argument& e) {
+    // Handle the case where the conversion cannot be performed
+    // because the input is not a valid number
+        } catch (const std::out_of_range& e) {
+    // Handle the case where the number is out of the int range
+        }
         if (repeat.is_some() && start.is_some() && end.is_some()) {
             return Option<time_block>::some({start.unwrap(), end.unwrap(), repeat.unwrap()});
         }
@@ -133,6 +155,8 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         - comparison function for two times to sort - done
         - etc.
     */
+   inline calendar(std::vector<time_block>busy_times) : busy_times(busy_times) {} // default constructor
+   inline calendar() : busy_times() {} // none concstructor
     public:
     bool is_valid_time(time_block time) {
         if (time.start >= time.end ) {
@@ -157,6 +181,7 @@ struct calendar { // contains busy times only! - happy to discuss data structure
     }
 
     void add_time(time_block to_add) {
+
         if (is_valid_time(to_add)) {
             busy_times.push_back(to_add);
         }
@@ -201,16 +226,35 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         });
     }
 
-    calendar decode(std::istringstream& s) {
-        calendar decodedCal;
-        // read first line of string stream
-        // for each line: s
-            // separate repeat attr, start time block, end time block 
-            // decode first word - repeat attr
-            // decode start time block
-            // decode end time block
+    Option<calendar> decode(std::istringstream& s) {
+        calendar decoded_cal;
 
-        return decodedCal;
+        // read first line of string stream - number to loop
+        std::string string_repetitions;
+        int num_reps;
+        std::getline(s, string_repetitions, '\n');
+        num_reps = stoi(string_repetitions);
+        for (int i = 0; i < num_reps; i++ ){
+            std::string line;
+            
+            std::getline(s, line, '\n');
+
+            std::istringstream time_block_istream(line);
+            std::ostringstream oss;
+            Option<time_block> block = time_block::decode(time_block_istream);
+            oss << time_block_istream.rdbuf();
+            std::string time_block_string = oss.str();
+            
+            if(block.is_some()){ 
+
+                decoded_cal.add_time(block.unwrap());
+            }
+            
+            // How do we want to handle invalid time blocks here?
+            
+        }
+
+        return Option<calendar>::some(decoded_cal);
     }
     
     

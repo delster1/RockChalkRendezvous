@@ -52,9 +52,12 @@ int main () {
 
     my_cal.sort_busy_times();
 
-    std::string decoded_cal = my_cal.encodeCalendar();
-    std::cout << decoded_cal; 
-    std::istringstream decodedCalStream(decoded_cal);
-    my_cal.decode(decodedCalStream);
+    std::string encoded_cal = my_cal.encode();
+    std::cout << encoded_cal; 
+    std::istringstream encodedCalStream(encoded_cal);
+    calendar decoded_cal = my_cal.decode(encodedCalStream).unwrap();
+
+    std::string test_cal = decoded_cal.encode();
+    std::cout << "CALENDAR: " << test_cal << "\n";
     return 0;
 }
