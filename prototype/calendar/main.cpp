@@ -7,9 +7,7 @@
 #include <sstream>
 #include <bitset>
 #include <algorithm>
-#include "../definitions.hpp"
-#include "../datetime_functions.hpp"
-#include "../common_types.hpp"
+#include "../timeanddate.hpp"
 #include "../calendar.hpp"
 
 int main () {

@@ -1,5 +1,5 @@
-#ifndef RCR_COMMON_TYPES_DEFINITIONS
-#define RCR_COMMON_TYPES_DEFINITIONS
+#ifndef RCR_COMMON_UTILS_DEFINITIONS
+#define RCR_COMMON_UTILS_DEFINITIONS
 
 #define i32 int
 #define i16 short
@@ -55,8 +55,6 @@ struct Option {
 		else return default_value;
 	}
 };
-
-
 
 
 

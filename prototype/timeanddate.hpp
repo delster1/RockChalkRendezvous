@@ -1,11 +1,70 @@
-#ifndef RCR_DATETIME_FUNCTIONS_DEFINITIONS
-#define RCR_DATETIME_FUNCTIONS_DEFINITIONS
+#ifndef RCR_TIMEANDDATE_DEFINITIONS
+#define RCR_TIMEANDDATE_DEFINITIONS
 
 #include <math.h>
 #include <time.h>
 #include <string.h>
-#include "common_types.hpp"
-#include "datetime_constants.hpp"
+#include "common_utils.hpp"
+
+
+#define MINUTES_IN_DAY 1440
+#define JAN_1_2000_DAY Saturday
+
+
+enum Month {
+	January   =  0,
+	February  =  1,
+	March     =  2,
+	April     =  3,
+	May       =  4,
+	June      =  5,
+	July      =  6,
+	August    =  7,
+	September =  8,
+	October   =  9,
+	November  = 10,
+	December  = 11,
+};
+
+enum Day {
+	Monday    = 0,
+	Tuesday   = 1,
+	Wednesday = 2,
+	Thursday  = 3,
+	Friday    = 4,
+	Saturday  = 5,
+	Sunday    = 6,
+};
+
+static const char MONTH_NAMES[12][10] = {
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
+};
+
+static const char DAY_NAMES[7][10] = {
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+	"Sunday",
+};
+
+
+
+
+
 
 bool is_leap_year(i32 year) {
 	if (mod(year, 400) == 0) return true;
@@ -69,6 +128,10 @@ i32 find_day_of_year(Month month, i32 day_of_month, i32 year) {
 	
 	return day_of_month - 1;
 }
+
+
+
+
 
 
 // needed for the function that calculates both at once
