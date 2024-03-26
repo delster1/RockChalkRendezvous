@@ -7,14 +7,14 @@
 #include "common_types.hpp"
 #include "datetime_constants.hpp"
 
-bool is_leap_year(u16 year) {
-	if (year % 400 == 0) return true;
-	if (year % 100 == 0) return false;
-	if (year % 4 == 0) return true;
+bool is_leap_year(i32 year) {
+	if (mod(year, 400) == 0) return true;
+	if (mod(year, 100) == 0) return false;
+	if (mod(year, 4) == 0) return true;
 	return false;
 }
 
-u16 find_days_in_year(u16 year) {
+u16 find_days_in_year(i32 year) {
 	if (is_leap_year(year)) return 366;
 	else return 365;
 }
@@ -55,7 +55,7 @@ i32 find_day_of_year(Month month, i32 day_of_month, i32 year) {
 			month = January;
 			year += 1;
 			leap = is_leap_year(year);
-		} else month = (Month)((u32) month + 1);
+		} else month = static_cast<Month>(static_cast<u32>(month) + 1);
 	}
 	
 	while (day_of_month <= 0) {
@@ -64,7 +64,7 @@ i32 find_day_of_year(Month month, i32 day_of_month, i32 year) {
 			month = December;
 			year -= 1;
 			leap = is_leap_year(year);
-		} else month = (Month)((u32) month - 1);
+		} else month = static_cast<Month>(static_cast<u32>(month) - 1);
 	}
 	
 	return day_of_month - 1;
@@ -92,7 +92,7 @@ struct TimeAndDate {
 	
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
 		// extraneous minute values roll over to the day number
-		i32 extra_days = floor((double) minute / MINUTES_IN_DAY);
+		i32 extra_days = floor(static_cast<double>(minute) / MINUTES_IN_DAY);
 		minute -= extra_days * MINUTES_IN_DAY;
 		day += extra_days;
 		
@@ -107,7 +107,7 @@ struct TimeAndDate {
 			year -= 1;
 		}
 		
-		return { (i32) minute, (i32) day, year };
+		return { static_cast<u16>(minute), static_cast<u16>(day), year };
 	}
 	
 	// September 31 -> October 1
@@ -168,7 +168,7 @@ struct TimeAndDate {
 		u16 days_this_month;
 		while (days_remaining >= (days_this_month = find_days_in_month(month, leap))) {
 			days_remaining -= days_this_month;
-			month = (Month)((u32) month + 1);
+			month = static_cast<Month>(static_cast<u32>(month) + 1);
 		}
 		return MonthAndDay { month, (u16) (days_remaining + 1) }; // this day number is 1 based because that's how month dates work
 	}
@@ -176,9 +176,9 @@ struct TimeAndDate {
 	Day get_day_of_week() {
 		// base all week days off of january 1st 2000
 		i32 year_diff = this->year - 2000;
-		i32 optional_one = (i32) (year_diff > 0);
+		i32 optional_one = static_cast<i32>(year_diff > 0);
 		
-		i32 day_count = (i32) JAN_1_2000_DAY
+		i32 day_count = static_cast<i32>(JAN_1_2000_DAY)
 					  + this->day
 					  + year_diff
 					  + (year_diff - optional_one) / 4
@@ -186,8 +186,7 @@ struct TimeAndDate {
 					  + (year_diff - optional_one) / 400
 					  + optional_one;
 		
-		// Find a true modulo since % is actually remainder
-		return (Day) ((day_count % 7 + 7) % 7);
+		return static_cast<Day>(mod(day_count, 7));
 	}
 	
 	// don't use this on times more than 4085 years apart or else
@@ -218,7 +217,7 @@ struct TimeAndDate {
 	TimeAndDate add_months(const i32 months) {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month(this->minute, md.day,
-			(Month) ((((i32) md.month + months) % 12 + 12) % 12),
+			static_cast<Month>(mod(static_cast<i32>(md.month) + months, 12)),
 		this->year);
 	}
 	// will wrap around to the next month
@@ -226,7 +225,7 @@ struct TimeAndDate {
 	TimeAndDate add_months_wrap_day(const i32 months) {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
-			(Month) ((((i32) md.month + months) % 12 + 12) % 12),
+			static_cast<Month>((static_cast<i32>(md.month) + months, 12)),
 		this->year);
 	}
 	// leap day won't shift everything off by a day
