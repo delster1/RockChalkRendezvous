@@ -210,11 +210,12 @@ struct TimeAndDate {
 		return s.str();
 	}
 	
-	static StatusAndValue<TimeAndDate> decode(std::istream& stream) {
+	static Status decode(std::istream& stream, TimeAndDate& td) {
 		i32 minute, day, year;
 		if (stream >> minute && stream >> day && stream >> year) {
-			return { Success, TimeAndDate::build(minute, day, year) };
-		} else return { Failure };
+			td = TimeAndDate::build(minute, day, year);
+			return Success;
+		} else return Failure;
 	}
 	
 	std::string to_string() {

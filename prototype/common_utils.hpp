@@ -26,12 +26,6 @@ enum Status {
 };
 
 
-template <typename T>
-struct StatusAndValue {
-	Status status;
-	T value;
-};
-
 
 
 
