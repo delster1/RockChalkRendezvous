@@ -205,16 +205,16 @@ struct TimeAndDate {
 	inline u16 get_hour() { return this->minute / 60; }
 	
 	std::string encode() {
-		return std::to_string(this->minute) + " " + std::to_string(this->day) + " " + std::to_string(this->year);
+		let s = std::ostringstream();
+		s << this->minute << " " << this->day << " " << this->year;
+		return s.str();
 	}
 	
-	static Option<TimeAndDate> decode(std::istringstream& s) {
+	static StatusAndValue<TimeAndDate> decode(std::istream& stream) {
 		i32 minute, day, year;
-		if (s >> minute && s >> day && s >> year) {
-			return Option<TimeAndDate>::some(TimeAndDate::build(minute, day, year));
-		} else {
-			return Option<TimeAndDate>::none();
-		}
+		if (stream >> minute && stream >> day && stream >> year) {
+			return { Success, TimeAndDate::build(minute, day, year) };
+		} else return { Failure };
 	}
 	
 	std::string to_string() {
