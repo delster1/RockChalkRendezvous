@@ -43,8 +43,6 @@ LoginResult login(std::istream& message) {
 
 
 
-
-
 ServerResponse create_account(std::istream& message) {
 	std::string username, password;
 	if (read_quoted_string(message, username) == Failure) return BadData;
@@ -59,9 +57,7 @@ ServerResponse create_account(std::istream& message) {
 	// todo: username and password screening
 	// InvalidPassword unused otherwise
 	
-	let user_file = std::ofstream("users/" + username + ".txt");
-	user_file << User(username, password).encode();
-	user_file.close();
+	(std::ofstream("users/" + username + ".txt") << User(username, password).encode()).close();
 	
 	return AccountOk;
 }
@@ -84,7 +80,13 @@ int main() {
 		return 1;
 	}
 	
-	
+	while (groups_file.good()) {
+		Group group;
+		if (Group::decode(groups_file, group) == Failure) break;
+		if (groups.try_emplace(group.id, group).second == false) {
+			printf("Duplicate group id from '%s'\n", group.name.c_str());
+		}
+	}
 	
 	
 	
@@ -138,7 +140,15 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
 		
-		// todo: leave all groups
+		for (GroupId id : r.user.groups) {
+			auto iterator = groups.find(id);
+			if (iterator == groups.end()) {
+				printf("User '%s' has missing group reference '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
+				continue;
+			}
+			std::vector<std::string> members = iterator->second.members;
+			members.erase(std::find(members.begin(), members.end(), r.user.username));
+		}
 		
 		std::remove(("users/" + r.user.username + ".txt").c_str());
 		response.set_content(std::string(AccountDeleted, 1), "text/plain");
@@ -152,9 +162,7 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
 		
-		
-		// todo
-		// UserCalendar
+		response.set_content(UserCalendar + "\n" + r.user.calendar.encode(), "text/plain");
 	});
 	
 	
@@ -165,8 +173,16 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
 		
-		// todo
-		// UserCalendarWritten
+		Calendar calendar;
+		if (Calendar::decode(message, calendar) == Failure) {
+			response.set_content(std::string(BadData, 1), "text/plain");
+			return;
+		}
+		
+		r.user.calendar = calendar;
+		(std::ofstream("users/" + r.user.username + ".txt") << r.user.encode()).close();
+		
+		response.set_content(std::string(UserCalendarWritten, 1), "text/plain");
 	});
 	
 	
@@ -177,8 +193,17 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
 		
-		// todo
-		// Groups
+		let user_group_data = std::vector<Group>();
+		for (GroupId id : r.user.groups) {
+			auto iterator = groups.find(id);
+			if (iterator == groups.end()) {
+				printf("User '%s' has missing group reference '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
+				continue;
+			}
+			user_group_data.push_back(iterator->second);
+		}
+		
+		response.set_content(Groups + "\n" + encode_vector<Group>(user_group_data, Group::encode_static), "text/plain");
 	});
 	
 	

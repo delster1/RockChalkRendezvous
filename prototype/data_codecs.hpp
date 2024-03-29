@@ -12,8 +12,8 @@ template <typename T>
 std::string encode_vector(const std::vector<T>& vector, std::function<std::string(const T&)> encode_function) {
 	let s = std::ostringstream();
 	s << vector.size();
-	for (int i = 0; i < vector.size(); i++) {
-		s << " " << encode_function(vector[i]);
+	for (T item : vector) {
+		s << " " << encode_function(item);
 	}
 	return s.str();
 }
@@ -94,8 +94,8 @@ struct User {
 	User() {}
 	User(std::string username, std::string password) : username(username), password(password) {}
 	
-	inline std::string encode() const { User::encode(*this); }
-	static std::string encode(const User& user) {
+	inline std::string encode() const { User::encode_static(*this); }
+	static std::string encode_static(const User& user) {
 		let s = std::ostringstream();
 		s << quote_string(user.username) << " " << quote_string(user.password) << "\n";
 		s << encode_vector<GroupId>(user.groups, encode_group_id) << "\n" << user.calendar.encode();
@@ -117,8 +117,8 @@ struct Group {
 	std::string name;
 	std::vector<std::string> members;
 	
-	inline std::string encode() const { Group::encode(*this); }
-	static std::string encode(const Group& group) {
+	inline std::string encode() const { Group::encode_static(*this); }
+	static std::string encode_static(const Group& group) {
 		let s = std::ostringstream();
 		s << encode_group_id(group.id) << " " << quote_string(group.name) << " " << encode_vector<std::string>(group.members, quote_string);
 		return s.str();
