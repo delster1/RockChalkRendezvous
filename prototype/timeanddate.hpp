@@ -185,7 +185,7 @@ struct TimeAndDate {
 		return TimeAndDate::build_from_month_wrap_day(minute, day, month, year);
 	}
 	
-	inline static TimeAndDate now() {
+	static TimeAndDate now() {
 		time_t system_time;
 		time(&system_time);
 		struct tm timeinfo = *gmtime(&system_time);
@@ -197,16 +197,17 @@ struct TimeAndDate {
 		return output;
 	}
 	
-	inline u16 get_minute_of_day() { return this->minute; }
-	inline u16 get_day_of_year() { return this->day; }
-	inline u16 get_year() { return this->year; }
+	inline u16 get_minute_of_day() const { return this->minute; }
+	inline u16 get_day_of_year() const { return this->day; }
+	inline u16 get_year() const { return this->year; }
 	
-	inline u16 get_minute() { return this->minute % 60; }
-	inline u16 get_hour() { return this->minute / 60; }
+	inline u16 get_minute() const { return this->minute % 60; }
+	inline u16 get_hour() const { return this->minute / 60; }
 	
-	std::string encode() {
+	inline std::string encode() const { return TimeAndDate::encode(*this); }
+	static std::string encode(const TimeAndDate& td) {
 		let s = std::ostringstream();
-		s << this->minute << " " << this->day << " " << this->year;
+		s << td.minute << " " << td.day << " " << td.year;
 		return s.str();
 	}
 	
@@ -218,14 +219,14 @@ struct TimeAndDate {
 		} else return Failure;
 	}
 	
-	std::string to_string() {
+	std::string to_string() const {
 		MonthAndDay md = this->get_month_and_day();
 		char s[64] = {0};
 		snprintf(s, 64, "%d:%02d %s, %s %d %d", this->get_hour(), this->get_minute(), DAY_NAMES[this->get_day_of_week()], MONTH_NAMES[md.month], md.day, this->year);
 		return std::string(s);
 	}
 	
-	MonthAndDay get_month_and_day() { // these are together since it's basically the same computation
+	MonthAndDay get_month_and_day() const { // these are together since it's basically the same computation
 		Month month = January;
 		bool leap = is_leap_year(this->year);
 		u16 days_remaining = this->day;
@@ -237,7 +238,7 @@ struct TimeAndDate {
 		return MonthAndDay { month, (u16) (days_remaining + 1) }; // this day number is 1 based because that's how month dates work
 	}
 	
-	Day get_day_of_week() {
+	Day get_day_of_week() const {
 		// base all week days off of january 1st 2000
 		i32 year_diff = this->year - 2000;
 		i32 optional_one = static_cast<i32>(year_diff > 0);
@@ -254,7 +255,7 @@ struct TimeAndDate {
 	}
 	
 	// don't use this on times more than 4085 years apart or else
-	i32 minutes_since(const TimeAndDate& t) {
+	i32 minutes_since(const TimeAndDate& t) const {
 		i32 minute_diff = this->minute - t.minute + (this->day - t.day) * MINUTES_IN_DAY;
 		
 		for (i32 year = t.year; year <= this->year; year++) {
@@ -270,15 +271,15 @@ struct TimeAndDate {
 	// functions for adding time correctly
 	// see comments for explanations of similar functions
 	
-	TimeAndDate add_minutes(const i32 minutes) {
+	TimeAndDate add_minutes(const i32 minutes) const {
 		return TimeAndDate::build(this->minute + minutes, this->day, this->year);
 	}
-	TimeAndDate add_days(const i32 days) {
+	TimeAndDate add_days(const i32 days) const {
 		return TimeAndDate::build(this->minute, this->day + days, this->year);
 	}
 	// will move the day down to stay in the correct month
 	// i.e. August 31 + 1 month = September 30
-	TimeAndDate add_months(const i32 months) {
+	TimeAndDate add_months(const i32 months) const {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month(this->minute, md.day,
 			static_cast<Month>(mod(static_cast<i32>(md.month) + months, 12)),
@@ -286,7 +287,7 @@ struct TimeAndDate {
 	}
 	// will wrap around to the next month
 	// i.e. August 31 + 1 month = October 1
-	TimeAndDate add_months_wrap_day(const i32 months) {
+	TimeAndDate add_months_wrap_day(const i32 months) const {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
 			static_cast<Month>((static_cast<i32>(md.month) + months, 12)),
@@ -294,38 +295,38 @@ struct TimeAndDate {
 	}
 	// leap day won't shift everything off by a day
 	// February 29 2024 + 1 year = February 28 2025
-	TimeAndDate add_years(const i32 years) {
+	TimeAndDate add_years(const i32 years) const {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month(this->minute, md.day, md.month, this->year + years);
 	}
 	// February 29 2024 + 1 year = March 1 2025
-	TimeAndDate add_years_wrap_day(const i32 years) {
+	TimeAndDate add_years_wrap_day(const i32 years) const {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day, md.month, this->year + years);
 	}
 	
-	inline bool operator==(const TimeAndDate& other) {
+	inline bool operator==(const TimeAndDate& other) const {
 		return this->year == other.year && this->day == other.day && this->minute == other.minute;
 	}
-	inline bool operator!=(const TimeAndDate& other) {
+	inline bool operator!=(const TimeAndDate& other) const {
 		return !(*this == other);
 	}
-	inline bool operator>(const TimeAndDate& other) {
+	inline bool operator>(const TimeAndDate& other) const {
 		if (this->year != other.year) return this->year > other.year;
 		if (this->day != other.day) return this->day > other.day;
 		if (this->minute != other.minute) return this->minute > other.minute;
 		return false;
 	}
-	inline bool operator<(const TimeAndDate& other) {
+	inline bool operator<(const TimeAndDate& other) const {
 		if (this->year != other.year) return this->year < other.year;
 		if (this->day != other.day) return this->day < other.day;
 		if (this->minute != other.minute) return this->minute < other.minute;
 		return false;
 	}
-	inline bool operator>=(const TimeAndDate& other) {
+	inline bool operator>=(const TimeAndDate& other) const {
 		return !(*this < other);
 	}
-	inline bool operator<=(const TimeAndDate& other) {
+	inline bool operator<=(const TimeAndDate& other) const {
 		return !(*this > other);
 	}
 	
