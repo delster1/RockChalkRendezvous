@@ -2,11 +2,13 @@
 #include <string>
 #include <fstream>
 #include <cstdio>
+#include <vector>
 #include "httplib.h"
 
 #include "../timeanddate.hpp"
 #include "../calendar.hpp"
 #include "../networking.hpp"
+#include "../data_codecs.hpp"
 
 using namespace httplib;
 
@@ -15,29 +17,28 @@ using namespace httplib;
 struct LoginResult {
 	Status status;
 	ServerResponse response;
-	std::string username;
-	std::ifstream user_file;
+	User user;
 };
 
 LoginResult login(std::istream& message) {
 	std::string username, password;
 	
-	if (read_quoted_string(message, username, '"') == Failure) return { Failure, BadData };
-	if (read_quoted_string(message, password, '"') == Failure) return { Failure, BadData };
+	if (read_quoted_string(message, username) == Failure) return { Failure, BadData };
+	if (read_quoted_string(message, password) == Failure) return { Failure, BadData };
 	
 	// todo: username and password screening
 	
 	let user_file = std::ifstream("users/" + username + ".txt");
-	if (!user_file.is_open()) return { Failure, IncorrectLogin, username };
+	if (!user_file.is_open()) return { Failure, IncorrectLogin };
 	
-	std::string actual_password;
-	if (read_quoted_string(user_file, actual_password, '"') == Failure) {
+	User user;
+	if (User::decode(user_file, user) == Failure) {
 		printf("Couldn't look up password for '%s', user data is improperly formatted.", username.c_str());
-		return { Failure, IncorrectLogin, username, std::move(user_file) };
+		return { Failure, IncorrectLogin, user };
 	}
-	if (password != actual_password) return { Failure, IncorrectLogin, username, std::move(user_file) };
+	if (password != user.password) return { Failure, IncorrectLogin, user };
 	
-	return { Success, AccountOk, username, std::move(user_file) };
+	return { Success, AccountOk, user };
 }
 
 
@@ -46,8 +47,8 @@ LoginResult login(std::istream& message) {
 
 ServerResponse create_account(std::istream& message) {
 	std::string username, password;
-	if (read_quoted_string(message, username, '"') == Failure) return BadData;
-	if (read_quoted_string(message, password, '"') == Failure) return BadData;
+	if (read_quoted_string(message, username) == Failure) return BadData;
+	if (read_quoted_string(message, password) == Failure) return BadData;
 	
 	let test_user_file = std::ifstream("users/" + username + ".txt");
 	if (test_user_file.is_open()) {
@@ -59,7 +60,7 @@ ServerResponse create_account(std::istream& message) {
 	// InvalidPassword unused otherwise
 	
 	let user_file = std::ofstream("users/" + username + ".txt");
-	user_file << '"' << password << '"' << "\n" << 0 << "\n" << Calendar().encode();
+	user_file << User(username, password).encode();
 	user_file.close();
 	
 	return AccountOk;
@@ -73,6 +74,21 @@ int main() {
 	
 	let now = TimeAndDate::now();
 	printf("Server started.\nCurrent time: %s\n", now.to_string().c_str());
+	
+	
+	let groups = std::unordered_map<GroupId, Group>();
+	
+	let groups_file = std::ifstream("groups.txt");
+	if (!groups_file.is_open()) {
+		printf("Couldn't open groups.txt\n");
+		return 1;
+	}
+	
+	
+	
+	
+	
+	
 	
 	
 	server.Post(URL_PATTERNS[
@@ -94,7 +110,7 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		std::string username;
-		if (read_quoted_string(message, username, '"') == Failure) return BadData;
+		if (read_quoted_string(message, username) == Failure) return BadData;
 		
 		// todo: username screening
 		
@@ -124,7 +140,7 @@ int main() {
 		
 		// todo: leave all groups
 		
-		std::remove(("users/" + r.username + ".txt").c_str());
+		std::remove(("users/" + r.user.username + ".txt").c_str());
 		response.set_content(std::string(AccountDeleted, 1), "text/plain");
 	});
 	
@@ -185,6 +201,8 @@ int main() {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
 		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		
+		
 		
 		// todo
 		// InvalidGroupName

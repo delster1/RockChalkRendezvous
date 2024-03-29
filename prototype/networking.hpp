@@ -1,8 +1,7 @@
 #ifndef RCR_NETWORKING_DEFINITIONS
 #define RCR_NETWORKING_DEFINITIONS
 
-#include <string.h>
-#include "common_utils.hpp"
+#include <string>
 
 
 enum ClientRequest {
@@ -59,16 +58,6 @@ enum ServerResponse {
 };
 
 
-
-Status read_quoted_string(std::istream& stream, std::string& s, char quote) {
-	char next;
-	stream >> next;
-	if (stream.fail()) return Failure;
-	if (next != quote) return Failure;
-	std::getline(stream, s, quote);
-	if (stream.fail()) return Failure;
-	return Success;
-}
 
 
 
