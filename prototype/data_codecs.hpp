@@ -5,11 +5,10 @@
 #include <vector>
 #include "calendar.hpp"
 
-#define propagate(a) if (a == Failure) return Failure
 
 
 template <typename T>
-std::string encode_vector(const std::vector<T>& vector, std::function<std::string(const T&)> encode_function) {
+std::string encode_vector(const std::vector<T>& vector, const std::function<std::string(const T&)> encode_function) {
 	let s = std::ostringstream();
 	s << vector.size();
 	for (T item : vector) {
@@ -19,7 +18,7 @@ std::string encode_vector(const std::vector<T>& vector, std::function<std::strin
 }
 
 template <typename T>
-Status decode_vector(std::istream& stream, std::vector<T>& vector, std::function<Status(std::istream&, T&)> decode_function) {
+Status decode_vector(std::istream& stream, std::vector<T>& vector, const std::function<Status(std::istream&, T&)> decode_function) {
 	usize count;
 	stream >> count;
 	if (stream.fail()) return Failure;
@@ -116,6 +115,9 @@ struct Group {
 	GroupId id;
 	std::string name;
 	std::vector<std::string> members;
+	
+	Group() {}
+	Group(GroupId id, std::string name, std::vector<std::string> members) : id(id), name(name), members(members) {}
 	
 	inline std::string encode() const { Group::encode_static(*this); }
 	static std::string encode_static(const Group& group) {

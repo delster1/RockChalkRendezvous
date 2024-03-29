@@ -13,10 +13,13 @@
 using namespace httplib;
 
 
+#define return_code(a) return response.set_content(std::string(a, 1), "text/plain")
+
+
 
 struct LoginResult {
 	Status status;
-	ServerResponse response;
+	ServerResponse code;
 	User user;
 };
 
@@ -96,14 +99,14 @@ int main() {
 	server.Post(URL_PATTERNS[
 		Ping
 	], [&](const Request& request, Response& response) {
-		response.set_content(std::string(PingResponse, 1), "text/plain");
+		return_code(PingResponse);
 	});
 	
 	server.Post(URL_PATTERNS[
 		CreateAccount
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
-		response.set_content(std::string(create_account(message), 1), "text/plain");
+		return_code(create_account(message));
 	});
 	
 	
@@ -119,8 +122,8 @@ int main() {
 		let test_user_file = std::ifstream("users/" + username + ".txt");
 		if (test_user_file.is_open()) {
 			test_user_file.close();
-			response.set_content(std::string(UsernameUnavailable, 1), "text/plain");
-		} else response.set_content(std::string(UsernameAvailable, 1), "text/plain");
+			return_code(UsernameUnavailable);
+		} else return_code(UsernameAvailable);
 	});
 	
 	
@@ -129,7 +132,7 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		response.set_content(std::string(r.response, 1), "text/plain");
+		return_code(r.code);
 	});
 	
 	
@@ -138,20 +141,20 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
 		for (GroupId id : r.user.groups) {
-			auto iterator = groups.find(id);
-			if (iterator == groups.end()) {
-				printf("User '%s' has missing group reference '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
+			auto pair_ptr = groups.find(id);
+			if (pair_ptr == groups.end()) {
+				printf("User '%s' has reference to missing group '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
 				continue;
 			}
-			std::vector<std::string> members = iterator->second.members;
+			std::vector<std::string> members = pair_ptr->second.members;
 			members.erase(std::find(members.begin(), members.end(), r.user.username));
 		}
 		
 		std::remove(("users/" + r.user.username + ".txt").c_str());
-		response.set_content(std::string(AccountDeleted, 1), "text/plain");
+		return_code(AccountDeleted);
 	});
 	
 	
@@ -160,7 +163,7 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
 		response.set_content(UserCalendar + "\n" + r.user.calendar.encode(), "text/plain");
 	});
@@ -171,18 +174,15 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
 		Calendar calendar;
-		if (Calendar::decode(message, calendar) == Failure) {
-			response.set_content(std::string(BadData, 1), "text/plain");
-			return;
-		}
+		if (Calendar::decode(message, calendar) == Failure) return_code(BadData);
 		
 		r.user.calendar = calendar;
 		(std::ofstream("users/" + r.user.username + ".txt") << r.user.encode()).close();
 		
-		response.set_content(std::string(UserCalendarWritten, 1), "text/plain");
+		return_code(UserCalendarWritten);
 	});
 	
 	
@@ -191,16 +191,16 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
 		let user_group_data = std::vector<Group>();
 		for (GroupId id : r.user.groups) {
-			auto iterator = groups.find(id);
-			if (iterator == groups.end()) {
+			auto pair_ptr = groups.find(id);
+			if (pair_ptr == groups.end()) {
 				printf("User '%s' has missing group reference '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
 				continue;
 			}
-			user_group_data.push_back(iterator->second);
+			user_group_data.push_back(pair_ptr->second);
 		}
 		
 		response.set_content(Groups + "\n" + encode_vector<Group>(user_group_data, Group::encode_static), "text/plain");
@@ -208,15 +208,44 @@ int main() {
 	
 	
 	server.Post(URL_PATTERNS[
-		GetGroupCalendar
+		GetGroupCalendars
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
-		// todo
-		// InvalidGroup
-		// GroupCalendar
+		// read group id
+		GroupId id;
+		if (decode_group_id(message, id) == Failure) return_code(BadData);
+		
+		// check that requesting user is in the group
+		if (std::find(r.user.groups.begin(), r.user.groups.end(), id) == r.user.groups.end()) return_code(InvalidGroup);
+		
+		// look up group
+		auto pair_ptr = groups.find(id);
+		if (pair_ptr == groups.end()) {
+			printf("User '%s' has reference to missing group '%s'", r.user.username.c_str(), encode_group_id(id).c_str());
+			return_code(InvalidGroup);
+		}
+		
+		// format and send
+		Group group = pair_ptr->second;
+		std::string calendar_data = encode_vector<std::string>(group.members, [&](std::string username) -> std::string {
+			let user_file = std::ifstream("users/" + username + ".txt");
+			if (!user_file.is_open()) {
+				printf("Reference to missing user '%s' in group '%s'\n", username.c_str(), group.name.c_str());
+				return "";
+			}
+			User user;
+			if (User::decode(user_file, user) == Failure) {
+				printf("Couldn't read calendar of user '%s', data file is improperly formatted.\n", username.c_str());
+				return "\n" + quote_string(username) + " " + Calendar().encode();
+			}
+			
+			return "\n" + quote_string(username) + " " + user.calendar.encode();
+		});
+		
+		response.set_content(GroupCalendars + "\n" + calendar_data, "text/plain");
 	});
 	
 	
@@ -225,13 +254,27 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
+		std::string name;
+		if (read_quoted_string(message, name) == Failure) return_code(BadData);
 		
+		// todo: filter group names
+		// InvalidGroupName unused otherwise
 		
-		// todo
-		// InvalidGroupName
-		// GroupCreated
+		time_t now;
+		GroupId id;
+		std::hash<time_t> hash_function;
+		while (true) {
+			time(&now);
+			id = hash_function(now);
+			if (groups.try_emplace(id, Group(id, name, std::vector<std::string>({ r.user.username }))).second == Success) break;
+		}
+		
+		r.user.groups.push_back(id);
+		(std::ofstream("users/" + r.user.username + ".txt") << r.user.encode()).close();
+		
+		return_code(GroupCreated);
 	});
 	
 	
@@ -240,11 +283,30 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
-		// todo
-		// InvalidGroup
-		// GroupJoined
+		// read group id
+		GroupId id;
+		if (decode_group_id(message, id) == Failure) return_code(BadData);
+		
+		// check that requesting user is not already in the group
+		if (std::find(r.user.groups.begin(), r.user.groups.end(), id) != r.user.groups.end()) return_code(InvalidGroup);
+		
+		// look up group
+		auto pair_ptr = groups.find(id);
+		if (pair_ptr == groups.end()) return_code(InvalidGroup);
+		
+		auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), r.user.username);
+		if (member_ptr == pair_ptr->second.members.end()) {
+			pair_ptr->second.members.push_back(r.user.username);
+		} else {
+			printf("User '%s' was missing group reference '%s'\n", r.user.username.c_str(), pair_ptr->second.name.c_str());
+		}
+		
+		r.user.groups.push_back(id);
+		(std::ofstream("users/" + r.user.username + ".txt") << r.user.encode()).close();
+		
+		return_code(GroupJoined);
 	});
 	
 	
@@ -253,12 +315,32 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
-		// todo
-		// InvalidGroup
-		// InvalidGroupName
-		// GroupRenamed
+		// read group id
+		GroupId id;
+		if (decode_group_id(message, id) == Failure) return_code(BadData);
+		
+		// read name
+		std::string name;
+		if (read_quoted_string(message, name) == Failure) return_code(BadData);
+		
+		// todo: filter group names
+		// InvalidGroupName unused otherwise
+		
+		// check that requesting user is in the group
+		if (std::find(r.user.groups.begin(), r.user.groups.end(), id) == r.user.groups.end()) return_code(InvalidGroup);
+		
+		// look up group
+		auto pair_ptr = groups.find(id);
+		if (pair_ptr == groups.end()) {
+			printf("User '%s' has reference to missing group '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
+			return_code(InvalidGroup);
+		}
+		
+		pair_ptr->second.name = name;
+		
+		return_code(GroupRenamed);
 	});
 	
 	
@@ -267,11 +349,33 @@ int main() {
 	], [&](const Request& request, Response& response) {
 		let message = std::istringstream(request.body);
 		LoginResult r = login(message);
-		if (r.status == Failure) { response.set_content(std::string(r.response, 1), "text/plain"); return; }
+		if (r.status == Failure) return_code(r.code);
 		
-		// todo
-		// InvalidGroup
-		// GroupLeft
+		// read group id
+		GroupId id;
+		if (decode_group_id(message, id) == Failure) return_code(BadData);
+		
+		auto group_ptr = std::find(r.user.groups.begin(), r.user.groups.end(), id);
+		if (group_ptr == r.user.groups.end()) return_code(InvalidGroup);
+		r.user.groups.erase(group_ptr);
+		
+		(std::ofstream("users/" + r.user.username + ".txt") << r.user.encode()).close();
+		
+		// look up group
+		auto pair_ptr = groups.find(id);
+		if (pair_ptr == groups.end()) {
+			printf("User '%s' had reference to missing group '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
+			return_code(GroupLeft);
+		}
+		
+		auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), r.user.username);
+		if (member_ptr == pair_ptr->second.members.end()) {
+			printf("User '%s' was missing from group '%s' member list\n", r.user.username.c_str(), encode_group_id(id).c_str());
+			return_code(GroupLeft);
+		}
+		pair_ptr->second.members.erase(member_ptr);
+		
+		return_code(GroupLeft);
 	});
 	
 	
