@@ -53,9 +53,9 @@ int main () {
     std::string encoded_cal = my_cal.encode();
     std::cout << encoded_cal; 
     std::istringstream encodedCalStream(encoded_cal);
-    calendar decoded_cal = my_cal.decode(encodedCalStream).unwrap();
+    Status calendar_status = my_cal.decode(encodedCalStream, my_cal);
 
-    std::string test_cal = decoded_cal.encode();
+    std::string test_cal = my_cal.encode();
     std::cout << "CALENDAR: " << test_cal << "\n";
     return 0;
 }

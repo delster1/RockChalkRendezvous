@@ -11,6 +11,7 @@
 #include "timeanddate.hpp"
 
 enum class RepeatType {
+    Invalid,
     NoRepeat,
     Daily,
     Weekly,
@@ -43,14 +44,14 @@ struct repeat_attr {
         }
     }
     
-    static Option<RepeatType> stringToRepeatType(const std::string& str) {
-        if (str == "NoRepeat") return Option<RepeatType>::some(RepeatType::NoRepeat);
-        if (str == "Daily") return Option<RepeatType>::some(RepeatType::Daily);
-        if (str == "Weekly") return Option<RepeatType>::some(RepeatType::Weekly);
-        if (str == "Monthly") return Option<RepeatType>::some(RepeatType::Monthly);
-        if (str == "Yearly") return Option<RepeatType>::some(RepeatType::Yearly);
+    static RepeatType stringToRepeatType(const std::string& str) {
+        if (str == "NoRepeat") return (RepeatType::NoRepeat);
+        if (str == "Daily") return (RepeatType::Daily);
+        if (str == "Weekly") return (RepeatType::Weekly);
+        if (str == "Monthly") return (RepeatType::Monthly);
+        if (str == "Yearly") return (RepeatType::Yearly);
 
-        return Option<RepeatType>::none(); // Default case
+        return RepeatType::Invalid; // Default case
     }
 
     std::string encode() {
@@ -59,11 +60,11 @@ struct repeat_attr {
         return oss.str();
     }
 
-    static Option<repeat_attr> decode(std::istringstream& s) {
+    static Status decode(std::istringstream& s, repeat_attr repeat) {
         
         std::string part;
         std::getline(s, part, ' '); // Get RepeatType part
-        Option<RepeatType> type = stringToRepeatType(part);
+        RepeatType type = stringToRepeatType(part);
         std::getline(s, part, ' '); // Get duration_days part
         u16 duration_days;
         try {
@@ -74,12 +75,13 @@ struct repeat_attr {
         } catch (const std::out_of_range& e) {
     // Handle the case where the number is out of the int range
         }
-        if (duration_days >= 0 && type.is_some()) {
-            return Option<repeat_attr>::some(repeat_attr::build_repeat_attr(type.unwrap(), duration_days));
+        if (duration_days >= 0 && type != RepeatType::Invalid) {
+            repeat_attr repeat = repeat_attr::build_repeat_attr(type, duration_days);
+            return Success;
         }
         else {
 
-            return Option<repeat_attr>::none();
+            return Failure;
         }
     }
 
@@ -103,7 +105,7 @@ struct time_block {
         return oss.str();
     }
 
-    static Option<time_block> decode(std::istringstream& s) {
+    static Status decode(std::istringstream& s, time_block block) {
         std::string repeatTypeString;
         std::string repeatIntervalString;
         std::string timeBlockStartString;
@@ -117,11 +119,12 @@ struct time_block {
         std::istringstream repeatStream(repeatTypeString + ' '+ repeatIntervalString); // ik this code is cursed - j threw the delim in lol
         std::istringstream timeBlockStartStream(timeBlockStartString);
         std::istringstream timeBlockEndStream(timeBlockEndString);
-
-        Option<repeat_attr> repeat = repeat_attr::decode(repeatStream);
-        
-        Option<TimeAndDate> start = TimeAndDate::decode(timeBlockStartStream);
-        Option<TimeAndDate> end = TimeAndDate::decode(timeBlockEndStream);
+        repeat_attr repeat;
+        Status repeat_status = repeat_attr::decode(repeatStream, repeat);
+        TimeAndDate start;
+        Status start_status = TimeAndDate::decode(timeBlockStartStream, start);
+        TimeAndDate end;
+        Status end_status = TimeAndDate::decode(timeBlockEndStream, end);
 
         u16 duration_days;
         try {
@@ -132,11 +135,12 @@ struct time_block {
         } catch (const std::out_of_range& e) {
     // Handle the case where the number is out of the int range
         }
-        if (repeat.is_some() && start.is_some() && end.is_some()) {
-            return Option<time_block>::some({start.unwrap(), end.unwrap(), repeat.unwrap()});
+        if (repeat_status != Failure && start_status != Failure && end_status != Failure) {
+            block = time_block(start, end, repeat);
+            return Success;
         }
         else {
-            return Option<time_block>::none();
+            return Failure;
         }
     }
 
@@ -224,8 +228,8 @@ struct calendar { // contains busy times only! - happy to discuss data structure
         });
     }
 
-    Option<calendar> decode(std::istringstream& s) {
-        calendar decoded_cal;
+    Status  decode(std::istringstream& s,calendar decoded_cal) {
+        
 
         // read first line of string stream - number to loop
         std::string string_repetitions;
@@ -239,20 +243,21 @@ struct calendar { // contains busy times only! - happy to discuss data structure
 
             std::istringstream time_block_istream(line);
             std::ostringstream oss;
-            Option<time_block> block = time_block::decode(time_block_istream);
+            time_block block;
+            Status block_decode_status = time_block::decode(time_block_istream, block);
             oss << time_block_istream.rdbuf();
             std::string time_block_string = oss.str();
             
-            if(block.is_some()){ 
+            if(block_decode_status == Success){ 
 
-                decoded_cal.add_time(block.unwrap());
+                decoded_cal.add_time(block);
             }
             
             // How do we want to handle invalid time blocks here?
             
         }
 
-        return Option<calendar>::some(decoded_cal);
+        return Failure;
     }
     
     
