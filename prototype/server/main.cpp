@@ -45,8 +45,8 @@ LoginResult login(std::istream& message) {
 	if (!user_file.is_open()) return { Failure, IncorrectLogin };
 	
 	User user;
-	if (User::decode(user_file, user) == Failure) {
-		printf("Couldn't look up password for '%s', user data is improperly formatted.", username.c_str());
+	if (user.decode(user_file) == Failure) {
+		printf("Couldn't read password for '%s', user data file is improperly formatted.\n", username.c_str());
 		return { Failure, IncorrectLogin, user };
 	}
 	if (password != user.password) return { Failure, IncorrectLogin, user };
@@ -81,7 +81,7 @@ inline void save_user_file(const User& user) {
 
 
 // Does not save the user's file after removing the group entry
-// Returns whether or not the group id was actually valid or not
+// Fails if the user already has no affiliation with the group
 Status leave_group(std::unordered_map<GroupID, Group>& groups, User& user, const GroupID& id) {
 	auto group_id_ptr = std::find(user.group_ids.begin(), user.group_ids.end(), id);
 	if (group_id_ptr == user.group_ids.end()) return Failure;
@@ -90,15 +90,17 @@ Status leave_group(std::unordered_map<GroupID, Group>& groups, User& user, const
 	auto pair_ptr = groups.find(id);
 	if (pair_ptr == groups.end()) {
 		printf("User '%s' had reference to missing group %s\n", user.username.c_str(), encode_group_id(id).c_str());
-		return;
+		return Success;
 	}
 	
 	auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), user.username);
 	if (member_ptr == pair_ptr->second.members.end()) {
 		printf("Group %s was missing reference to user '%s'\n", encode_group_id(id).c_str(), user.username.c_str());
-		return;
+		return Success;
 	}
 	pair_ptr->second.members.erase(member_ptr);
+	
+	if (pair_ptr->second.members.size() == 0) groups.erase(id);
 	
 	return Success;
 }
@@ -118,7 +120,7 @@ int main() {
 	
 	while (groups_file_in.good()) {
 		Group group;
-		if (Group::decode(groups_file_in, group) == Failure) break;
+		if (group.decode(groups_file_in) == Failure) break;
 		if (groups.try_emplace(group.id, group).second == false) {
 			printf("Duplicate group id from '%s'\n", group.name.c_str());
 		}
@@ -199,7 +201,7 @@ int main() {
 		if (r.status == Failure) return_code(r.code);
 		
 		Calendar calendar;
-		if (Calendar::decode(message, calendar) == Failure) return_code(BadData);
+		if (calendar.decode(message) == Failure) return_code(BadData);
 		
 		r.user.calendar = calendar;
 		save_user_file(r.user);
@@ -264,8 +266,8 @@ int main() {
 				return "";
 			}
 			User user;
-			if (User::decode(user_file, user) == Failure) {
-				printf("Couldn't read calendar of user '%s', data file is improperly formatted.\n", username.c_str());
+			if (user.decode(user_file) == Failure) {
+				printf("Couldn't read calendar of user '%s', user data file is improperly formatted.\n", username.c_str());
 				user.calendar = Calendar();
 			}
 			

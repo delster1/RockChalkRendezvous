@@ -57,10 +57,11 @@ struct Group {
 		return s.str();
 	}
 	
-	static Status decode(std::istream& stream, Group& group) {
-		propagate(decode_group_id(stream, group.id));
-		propagate(read_quoted_string(stream, group.name));
-		propagate(decode_vector<std::string>(stream, group.members, read_quoted_string));
+	static inline Status decode_static(std::istream& stream, Group& group) { return group.decode(stream); }
+	Status decode(std::istream& stream) {
+		propagate(decode_group_id(stream, this->id));
+		propagate(read_quoted_string(stream, this->name));
+		propagate(decode_vector<std::string>(stream, this->members, read_quoted_string));
 		return Success;
 	} 
 };

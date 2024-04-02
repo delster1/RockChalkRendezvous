@@ -211,10 +211,11 @@ struct TimeAndDate {
 		return s.str();
 	}
 	
-	static Status decode(std::istream& stream, TimeAndDate& td) {
+	static inline Status decode_static(std::istream& stream, TimeAndDate& td) { return td.decode(stream); }
+	Status decode(std::istream& stream) {
 		i32 minute, day, year;
 		if (stream >> minute && stream >> day && stream >> year) {
-			td = TimeAndDate::build(minute, day, year);
+			*this = TimeAndDate::build(minute, day, year);
 			return Success;
 		} else return Failure;
 	}

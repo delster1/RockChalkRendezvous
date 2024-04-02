@@ -5,132 +5,176 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <sstream> // Necessary for string streams. <sstream> is not part of <string>
+#include <sstream>
 #include <bitset>
 #include <algorithm>
-#include "timeanddate.hpp" // Assuming this is a custom header for handling time and date
 
-enum class RepeatType : char { // Assigning underlying type as char for ease of encoding/decoding
-    NoRepeat = 0,
-    Daily = 1, 
-    Weekly = 2,
-    Monthly = 3,
-    Yearly = 4
+#include "common_utils.hpp"
+#include "data_codecs.hpp"
+#include "timeanddate.hpp"
+
+
+
+enum RepeatType {
+    NoRepeat = 'N',
+    Daily    = 'D',
+    Weekly   = 'W',
+    Monthly  = 'M',
+    Yearly   = 'Y',
 };
 
-struct RepeatAttribute { // Struct names should be CamelCase
-    RepeatType type;
-    uint16_t duration_days; // Use standard uint16_t instead of "u16" assuming it was a typedef
-    
-    // Constructor with default values
-    RepeatAttribute(RepeatType type = RepeatType::NoRepeat, uint16_t duration_days = 0) : type(type), duration_days(duration_days) {}
 
-    static std::string to_string(RepeatType type) { // Renamed method
-        switch (type) {
-            case RepeatType::NoRepeat: return "NoRepeat";
-            case RepeatType::Daily: return "Daily";
-            case RepeatType::Weekly: return "Weekly";
-            case RepeatType::Monthly: return "Monthly";
-            case RepeatType::Yearly: return "Yearly";
-            default: return "Unknown";
-        }
-    }
-    
-    // Encoding method simplified to use type's numerical value
-    std::string encode() const {
-        std::ostringstream oss;
-        oss << static_cast<int>(type) << " " << duration_days;
-        return oss.str();
-    }
-
-    static RepeatAttribute decode(std::istream& s) {
-        RepeatType type;
-        uint16_t duration_days;
-        int typeInt;
-        s >> typeInt >> duration_days; // Direct parsing without getline
-        if (!s.fail() && typeInt >= static_cast<int>(RepeatType::NoRepeat) && typeInt <= static_cast<int>(RepeatType::Yearly)) {
-            type = static_cast<RepeatType>(typeInt);
-            return RepeatAttribute(type, duration_days);
-        } else {
-            // Handle decoding failure, perhaps throw an exception or return a default value
-            return RepeatAttribute();
-        }
-    }
-};
-
-struct TimeBlock { // Renamed to CamelCase
+struct TimeBlock {
+    std::string name;
     TimeAndDate start;
     TimeAndDate end;
-    RepeatAttribute repeat_interval;
+    RepeatType repeat_period;
+    u32 repeat_count;
     
-    TimeBlock(TimeAndDate start, TimeAndDate end, RepeatAttribute repeat_interval) : start(start), end(end), repeat_interval(repeat_interval) {}
+    inline TimeBlock() : start(TimeAndDate()), end(TimeAndDate()), repeat_period(NoRepeat), repeat_count(0) {}
+    inline TimeBlock(TimeAndDate start, TimeAndDate end, RepeatType repeat_period, u32 repeat_count) : start(start), end(end), repeat_period(repeat_period), repeat_count(repeat_count) {
+        if (this->end < this->start) {
+            // Swap the end and the start if they are in the wrong order
+            TimeAndDate temp = this->start;
+            this->start = this->end;
+            this->end = temp;
+        }
+    }
     
-    TimeBlock() : start(), end(), repeat_interval() {} // Default constructor
+    inline bool is_valid() const {
+        return this->start <= this->end;
+    }
     
+    inline bool overlaps(const TimeBlock& other) const {
+        // Check if one time block starts before the other ends and ends after the other starts (inverse of having no overlap)
+        return this->start < other.end && other.start < this->end;
+    }
+
+    inline bool within(const TimeBlock& other) const {
+        return other.start <= this->start && other.end >= this->end;
+    }
+    
+    
+    static inline std::string encode_static(const TimeBlock& block) { return block.encode(); }
     std::string encode() const {
         std::ostringstream oss;
-        oss << repeat_interval.encode() << " " << start.encode() << ":" << end.encode();
+        oss << this->start.encode() << " " << this->end.encode() << " " << static_cast<char>(this->repeat_period) << " " << this->repeat_count;
         return oss.str();
     }
-
-    static TimeBlock decode(std::istream& s) {
-        RepeatAttribute repeat = RepeatAttribute::decode(s);
-        TimeAndDate start; 
-        TimeAndDate::decode(s, start); // Assuming TimeAndDate has a similar decode method
-        TimeAndDate end; 
-         TimeAndDate::decode(s, end);
-        return TimeBlock(start, end, repeat);
+    
+    static inline Status decode_static(std::istream& s, TimeBlock& block) { return block.decode(s); }
+    Status decode(std::istream& s) {
+        propagate(this->start.decode(s));
+        propagate(this->end.decode(s));
+        
+        char c;
+        s >> c;
+        if (s.fail()) return Failure;
+        this->repeat_period = static_cast<RepeatType>(c);
+        switch (this->repeat_period) {
+            case NoRepeat:
+            case Daily:
+            case Weekly:
+            case Monthly:
+            case Yearly:
+                break;
+            default:
+                return Failure;
+        }
+        
+        s >> this->repeat_count;
+        if (s.fail()) return Failure;
+        
+        return Success;
     }
+    
+    std::string to_string() const {
+        std::ostringstream oss;
+        oss << "\n" << this->name << ":\nStart: " << this->start.to_string() << "\nEnd: " << this->end.to_string() << "\n";
+        
+        switch (this->repeat_period) {
+            case NoRepeat: oss << "Does not repeat\n"; break;
+            case Daily: oss << "Every day for " << this->repeat_count << " days\n"; break;
+            case Weekly: oss << "Every week for " << this->repeat_count << " weeks\n"; break;
+            case Monthly: oss << "Every month for " << this->repeat_count << " months\n"; break;
+            case Yearly: oss << "Every year for " << this->repeat_count << " years\n"; break;
+            default: oss << "Invalid repeat property\n";
+        }
+        
+        return oss.str();
+    }
+    
 };
 
-struct Calendar { // Renamed to CamelCase
+
+struct Calendar {
     std::vector<TimeBlock> busy_times;
-
-    Calendar(std::vector<TimeBlock> busy_times = {}) : busy_times(busy_times) {} // Constructor with default argument
-
-    bool is_valid_time(const TimeBlock& time) const {
-        if (time.start >= time.end) {
-            return false;
-        }
-        for (const auto& busy_time : busy_times) {
-            if (overlaps(time.start, time.end, busy_time.start, busy_time.end)) {
+    
+    inline Calendar() : busy_times(std::vector<TimeBlock>()) {}
+    
+    bool is_time_block_valid(const TimeBlock& block) const {
+        // this might have to be reworked, a time block will always collide with itself if it is in the list
+        // also blocks that overlap can still be valid if they repeat differently, most calendars allow for overlapping events
+        for (const TimeBlock& other_block : this->busy_times) {
+            if (block.overlaps(other_block)) {
                 return false;
             }
         }
+        
         return true;
     }
     
-    static bool overlaps(const TimeAndDate& start1, const TimeAndDate& end1, const TimeAndDate& start2, const TimeAndDate& end2) {
-        return start1 <= end2 && start2 <= end1;
-    }
-
-    void add_time(const TimeBlock& to_add) {
-        if (is_valid_time(to_add)) {
-            busy_times.push_back(to_add);
-        } else {
-            std::cout << "Invalid time!\n";
-        }
-    }
-
-    std::string encode() const {
-        std::ostringstream oss;
-        oss << busy_times.size() << "\n";
-        for(const auto& busy_time : busy_times) {
-            oss << busy_time.encode() << "\n";
-        }
-        return oss.str();
-    }
-
-    // Example of a method to decode Calendar objects
-    static Status decode(std::istream& s, Calendar& cal) {
-        size_t numBlocks;
-        s >> numBlocks; // Assumes the first line is the number of time blocks
-        for (size_t i = 0; i < numBlocks; ++i) {
-            TimeBlock block = TimeBlock::decode(s);
-            cal.add_time(block);
-        }
+    Status add_time(TimeBlock to_add) {
+        if (!this->is_time_block_valid(to_add)) return Failure;
+        
+        this->busy_times.push_back(to_add);
         return Success;
     }
+    
+    inline std::vector<TimeBlock> get_busy_times_in_day(const TimeAndDate& day) {
+        return this->get_busy_times_in_range(
+            TimeAndDate::build(0, day.get_day_of_year(), day.get_year()),
+            TimeAndDate::build(0, day.get_day_of_year() + 1, day.get_year())
+        );
+    }
+    
+    std::vector<TimeBlock> get_busy_times_in_range(const TimeAndDate& start, const TimeAndDate& end) {
+        // todo: make work with repeating blocks
+        let range = TimeBlock(start, end, NoRepeat, 0);
+        std::vector<TimeBlock> out;
+        for (const TimeBlock& busy_time : this->busy_times) {
+            if (range.overlaps(busy_time)) {
+                out.push_back(busy_time);
+            }
+        }
+        return out;
+    }
+    
+    void sort_busy_times() {
+        std::sort(this->busy_times.begin(), this->busy_times.end(), [](const TimeBlock& a, const TimeBlock& b) {
+            if (a.start != b.start) {
+                return a.start < b.start;
+            } else {
+                return a.end < b.end; // If starts are equal, compare ends
+            }
+        });
+    }
+    
+    
+    static inline std::string encode_static(const Calendar& calendar) { return calendar.encode(); }
+    std::string encode() const {
+        return encode_vector<TimeBlock>(this->busy_times, TimeBlock::encode_static, true);
+    }
+    
+    static inline Status decode_static(std::istream& s, Calendar& calendar) { return calendar.decode(s); }
+    Status decode(std::istream& s) {
+        return decode_vector<TimeBlock>(s, this->busy_times, TimeBlock::decode_static);
+    }
+    
+    
+    
 };
 
-#endif // RCR_CALENDAR_DEFINITIONS
+
+
+#endif

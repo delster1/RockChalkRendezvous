@@ -24,11 +24,12 @@ struct User {
 		return s.str();
 	}
 	
-	static Status decode(std::istream& stream, User& user) {
-		propagate(read_quoted_string(stream, user.username));
-		propagate(read_quoted_string(stream, user.password));
-		propagate(decode_vector<GroupID>(stream, user.group_ids, decode_group_id));
-		propagate(Calendar::decode(stream, user.calendar));
+	static inline Status decode_static(std::istream& stream, User& user) { return user.decode(stream); }
+	Status decode(std::istream& stream) {
+		propagate(read_quoted_string(stream, this->username));
+		propagate(read_quoted_string(stream, this->password));
+		propagate(decode_vector<GroupID>(stream, this->group_ids, decode_group_id));
+		propagate(this->calendar.decode(stream));
 		return Success;
 	}
 };
