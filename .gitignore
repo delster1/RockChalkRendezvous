@@ -1,3 +1,5 @@
 .vscode/
 *.exe
 
+prototype/server/groups.txt
+prototype/server/users

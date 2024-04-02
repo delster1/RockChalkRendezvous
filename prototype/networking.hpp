@@ -57,7 +57,29 @@ enum ServerResponse {
 	BadData             = '?',
 };
 
-
+std::string server_response_to_string(ServerResponse sr) {
+	switch (sr) {
+		case PingResponse:        return "Ping Response";
+		case AccountOk:           return "Account Ok";
+		case UsernameAvailable:   return "Username Available";
+		case UsernameUnavailable: return "Username Unavailable";
+		case InvalidPassword:     return "Invalid Password";
+		case IncorrectLogin:      return "Incorrect Login";
+		case AccountDeleted:      return "Account Deleted";
+		case UserCalendar:        return "User Calendar";
+		case UserCalendarWritten: return "User Calendar Written";
+		case Groups:              return "Groups";
+		case GroupCalendars:      return "Group Calendars";
+		case InvalidGroup:        return "Invalid Group";
+		case InvalidGroupName:    return "Invalid Group Name";
+		case GroupCreated:        return "Group Created";
+		case GroupJoined:         return "Group Joined";
+		case GroupRenamed:        return "Group Renamed";
+		case GroupLeft:           return "Group Left";
+		case BadData:             return "Bad Data";
+		default:                  return "Unknown";
+	};
+}
 
 
 
