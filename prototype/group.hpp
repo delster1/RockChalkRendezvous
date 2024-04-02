@@ -47,13 +47,13 @@ struct Group {
 	std::string name;
 	std::vector<std::string> members;
 	
-	Group() {}
-	Group(GroupID id, std::string name, std::vector<std::string> members) : id(id), name(name), members(members) {}
+	inline Group() {}
+	inline Group(GroupID id, std::string name, std::vector<std::string> members) : id(id), name(name), members(members) {}
 	
-	inline std::string encode() const { return Group::encode_static(*this); }
-	static std::string encode_static(const Group& group) {
+	static inline std::string encode_static(const Group& group) { return group.encode(); }
+	std::string encode() const {
 		let s = std::ostringstream();
-		s << encode_group_id(group.id) << " " << quote_string(group.name) << " " << encode_vector<std::string>(group.members, quote_string, false);
+		s << encode_group_id(this->id) << " " << quote_string(this->name) << " " << encode_vector<std::string>(this->members, quote_string, false);
 		return s.str();
 	}
 	

@@ -7,6 +7,7 @@
 #include <thread>
 #include "httplib.h"
 
+#include "../common_utils.hpp"
 #include "../data_codecs.hpp"
 #include "../group.hpp"
 #include "../calendar.hpp"
@@ -79,6 +80,29 @@ inline void save_user_file(const User& user) {
 }
 
 
+// Does not save the user's file after removing the group entry
+// Returns whether or not the group id was actually valid or not
+Status leave_group(std::unordered_map<GroupID, Group>& groups, User& user, const GroupID& id) {
+	auto group_id_ptr = std::find(user.group_ids.begin(), user.group_ids.end(), id);
+	if (group_id_ptr == user.group_ids.end()) return Failure;
+	user.group_ids.erase(group_id_ptr);
+	
+	auto pair_ptr = groups.find(id);
+	if (pair_ptr == groups.end()) {
+		printf("User '%s' had reference to missing group %s\n", user.username.c_str(), encode_group_id(id).c_str());
+		return;
+	}
+	
+	auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), user.username);
+	if (member_ptr == pair_ptr->second.members.end()) {
+		printf("Group %s was missing reference to user '%s'\n", encode_group_id(id).c_str(), user.username.c_str());
+		return;
+	}
+	pair_ptr->second.members.erase(member_ptr);
+	
+	return Success;
+}
+
 
 
 
@@ -150,16 +174,7 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) return_code(r.code);
 		
-		for (GroupID id : r.user.group_ids) {
-			auto pair_ptr = groups.find(id);
-			if (pair_ptr == groups.end()) {
-				printf("User '%s' had reference to missing group '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
-				continue;
-			}
-			std::vector<std::string> members = pair_ptr->second.members;
-			members.erase(std::find(members.begin(), members.end(), r.user.username));
-		}
-		
+		for (GroupID id : r.user.group_ids) leave_group(groups, r.user, id);
 		std::remove(USER_FOLDER_PATH(r.user.username).c_str());
 		return_code(AccountDeleted);
 	});
@@ -242,7 +257,7 @@ int main() {
 		
 		// format and send
 		Group group = pair_ptr->second;
-		std::string calendar_data = encode_vector<std::string>(group.members, [&](std::string username) -> std::string {
+		std::string calendar_data = encode_vector<std::string>(group.members, [&](const std::string& username) -> std::string {
 			let user_file = std::ifstream(USER_FOLDER_PATH(username));
 			if (!user_file.is_open()) {
 				printf("Reference to missing user '%s' in group '%s'\n", username.c_str(), group.name.c_str());
@@ -251,11 +266,11 @@ int main() {
 			User user;
 			if (User::decode(user_file, user) == Failure) {
 				printf("Couldn't read calendar of user '%s', data file is improperly formatted.\n", username.c_str());
-				return "\n" + quote_string(username) + " " + Calendar().encode();
+				user.calendar = Calendar();
 			}
 			
 			return "\n" + quote_string(username) + " " + user.calendar.encode();
-		}, true);
+		}, false);
 		
 		response.set_content(std::string(1, static_cast<char>(GroupCalendars)) + "\n" + calendar_data, "text/plain");
 	});
@@ -366,30 +381,12 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) return_code(r.code);
 		
-		// read group id
 		GroupID id;
 		if (decode_group_id(message, id) == Failure) return_code(BadData);
 		
-		auto group_id_ptr = std::find(r.user.group_ids.begin(), r.user.group_ids.end(), id);
-		if (group_id_ptr == r.user.group_ids.end()) return_code(InvalidGroup);
-		r.user.group_ids.erase(group_id_ptr);
+		if (leave_group(groups, r.user, id) == Failure) return_code(InvalidGroup);
 		
 		save_user_file(r.user);
-		
-		// look up group
-		auto pair_ptr = groups.find(id);
-		if (pair_ptr == groups.end()) {
-			printf("User '%s' had reference to missing group '%s'\n", r.user.username.c_str(), encode_group_id(id).c_str());
-			return_code(GroupLeft);
-		}
-		
-		auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), r.user.username);
-		if (member_ptr == pair_ptr->second.members.end()) {
-			printf("User '%s' was missing from group '%s' member list\n", r.user.username.c_str(), encode_group_id(id).c_str());
-			return_code(GroupLeft);
-		}
-		pair_ptr->second.members.erase(member_ptr);
-		
 		return_code(GroupLeft);
 	});
 	

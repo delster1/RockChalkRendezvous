@@ -4,19 +4,7 @@
 #include <string>
 #include <vector>
 #include "group.hpp"
-//#include "calendar.hpp"
-
-struct Calendar {
-	std::string dummy_message;
-	
-	inline std::string encode() const { return Calendar::encode(*this); }
-	static std::string encode(const Calendar& c) {
-		return quote_string(c.dummy_message);
-	}
-	static Status decode(std::istream& stream, Calendar& c) {
-		return read_quoted_string(stream, c.dummy_message);
-	}
-};
+#include "calendar.hpp"
 
 
 struct User {
@@ -25,14 +13,14 @@ struct User {
 	std::vector<GroupID> group_ids;
 	Calendar calendar;
 	
-	User() {}
-	User(std::string username, std::string password) : username(username), password(password) {}
+	inline User() {}
+	inline User(std::string username, std::string password) : username(username), password(password) {}
 	
-	inline std::string encode() const { return User::encode_static(*this); }
-	static std::string encode_static(const User& user) {
+	static inline std::string encode_static(const User& user) { return user.encode(); }
+	std::string encode() const {
 		let s = std::ostringstream();
-		s << quote_string(user.username) << " " << quote_string(user.password) << "\n";
-		s << encode_vector<GroupID>(user.group_ids, encode_group_id, true) << "\n" << user.calendar.encode();
+		s << quote_string(this->username) << " " << quote_string(this->password) << "\n";
+		s << encode_vector<GroupID>(this->group_ids, encode_group_id, true) << "\n" << this->calendar.encode();
 		return s.str();
 	}
 	
