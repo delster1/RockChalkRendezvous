@@ -3,18 +3,19 @@
 #include <fstream>
 #include <cstdio>
 #include <vector>
+#include <sstream>
 #include <thread>
 #include "httplib.h"
 
-#include "../timeanddate.hpp"
-//#include "../calendar.hpp"
-#include "../networking.hpp"
 #include "../data_codecs.hpp"
+#include "../group.hpp"
+#include "../calendar.hpp"
+#include "../user.hpp"
+#include "../networking.hpp"
 
 using namespace httplib;
 
 
-#define SERVER_PORT 8080
 #define GROUPS_FILE_NAME "groups.txt"
 #define USER_FOLDER_PATH(a) ("users/" + a + ".txt")
 

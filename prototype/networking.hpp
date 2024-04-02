@@ -4,6 +4,9 @@
 #include <string>
 
 
+#define SERVER_PORT 8080
+
+
 enum ClientRequest {
 	Ping              = 0,
 	CreateAccount     = 1,

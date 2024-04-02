@@ -9,7 +9,7 @@ using namespace httplib;
 
 
 int main() {
-	Client client("localhost", 8080);
+	Client client("localhost", SERVER_PORT);
 	
 	std::string input;
 	while (true) {
