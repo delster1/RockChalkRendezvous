@@ -17,13 +17,13 @@
 using namespace httplib;
 
 
+#define CONFIG_FILE_NAME "config.txt"
 #define GROUPS_FILE_NAME "groups.txt"
 #define USER_FOLDER_PATH(a) ("users/" + a + ".txt")
 
 
 
 #define return_code(a) return response.set_content(std::string(1, static_cast<char>(a)), "text/plain")
-
 
 
 
@@ -61,13 +61,15 @@ ServerResponse create_account(std::istream& message) {
 	if (read_quoted_string(message, username) == Failure) return BadData;
 	if (read_quoted_string(message, password) == Failure) return BadData;
 	
+	if (!is_username_valid(username)) return UsernameUnavailable;
+	
 	let test_user_file = std::ifstream(USER_FOLDER_PATH(username));
 	if (test_user_file.is_open()) {
 		test_user_file.close();
 		return UsernameUnavailable;
 	}
 	
-	// todo: username and password screening
+	// todo: password screening
 	// InvalidPassword unused otherwise
 	
 	(std::ofstream(USER_FOLDER_PATH(username)) << User(username, password).encode()).close();
@@ -121,8 +123,12 @@ int main() {
 	while (groups_file_in.good()) {
 		Group group;
 		if (group.decode(groups_file_in) == Failure) break;
+		if (group.members.size() == 0) {
+			printf("Group %s had no members\n", encode_group_id(group.id).c_str());
+			continue;
+		}
 		if (groups.try_emplace(group.id, group).second == false) {
-			printf("Duplicate group id from '%s'\n", group.name.c_str());
+			printf("Duplicate group id %s from '%s'\n", encode_group_id(group.id).c_str(), group.name.c_str());
 		}
 	}
 	
@@ -150,7 +156,7 @@ int main() {
 		std::string username;
 		if (read_quoted_string(message, username) == Failure) return_code(BadData);
 		
-		// todo: username screening
+		if (!is_username_valid(username)) return_code(UsernameUnavailable);
 		
 		let test_user_file = std::ifstream(USER_FOLDER_PATH(username));
 		if (test_user_file.is_open()) {
@@ -346,11 +352,9 @@ int main() {
 		LoginResult r = login(message);
 		if (r.status == Failure) return_code(r.code);
 		
-		// read group id
 		GroupID id;
 		if (decode_group_id(message, id) == Failure) return_code(BadData);
 		
-		// read name
 		std::string name;
 		if (read_quoted_string(message, name) == Failure) return_code(BadData);
 		
@@ -394,9 +398,25 @@ int main() {
 	
 	
 	
+	int port;
+	let config_file = std::ifstream(CONFIG_FILE_NAME);
+	if (config_file.is_open()) {
+		config_file >> port;
+		if (config_file.fail()) {
+			printf("Couldn't read port from config file, resetting it to default.\n");
+			port = DEFAULT_SERVER_PORT;
+			(std::ofstream(CONFIG_FILE_NAME) << port).close();
+		}
+	} else {
+		printf("Config file not found, creating a new one.\n");
+		port = DEFAULT_SERVER_PORT;
+		(std::ofstream(CONFIG_FILE_NAME) << port).close();
+	}
+	
+	
 	let http_thread = std::thread([&]() {
 		printf("Starting server\n");
-		server.listen("0.0.0.0", SERVER_PORT);
+		server.listen("0.0.0.0", port);
 		printf("Exiting server\n");
 	});
 	
@@ -410,6 +430,8 @@ int main() {
 			for (std::pair<const GroupID, Group> pair : groups) {
 				printf("%s\n", pair.second.encode().c_str());
 			}
+		} else if (input == "cool") {
+			printf("👍\n");
 		}
 	}
 	

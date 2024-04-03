@@ -124,13 +124,6 @@ struct Calendar {
         return true;
     }
     
-    Status add_time(TimeBlock to_add) {
-        if (!this->is_time_block_valid(to_add)) return Failure;
-        
-        this->busy_times.push_back(to_add);
-        return Success;
-    }
-    
     inline std::vector<TimeBlock> get_busy_times_in_day(const TimeAndDate& day) {
         return this->get_busy_times_in_range(
             TimeAndDate::build(0, day.get_day_of_year(), day.get_year()),
@@ -155,7 +148,7 @@ struct Calendar {
             if (a.start != b.start) {
                 return a.start < b.start;
             } else {
-                return a.end < b.end; // If starts are equal, compare ends
+                return a.end < b.end;
             }
         });
     }

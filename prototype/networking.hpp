@@ -4,7 +4,8 @@
 #include <string>
 
 
-#define SERVER_PORT 8080
+#define DEFAULT_SERVER_PORT 7777
+#define DEFAULT_SERVER_HOSTNAME "localhost"
 
 
 enum ClientRequest {

@@ -36,6 +36,17 @@ struct User {
 
 
 
+static const char USERNAME_DISALLOWED_CHARACTERS[] = "<>:\"/\\|?*";
+
+bool is_username_valid(const std::string& username) {
+	for (char c : username) {
+		if (c & 0b11100000 == 0) return false;
+		for (const char* p = USERNAME_DISALLOWED_CHARACTERS; *p != 0; p++) {
+			if (c == *p) return false;
+		}
+	}
+	return true;
+}
 
 
 

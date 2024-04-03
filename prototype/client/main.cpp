@@ -2,14 +2,46 @@
 #include <string>
 #include "httplib.h"
 
+#include "../common_utils.hpp"
 #include "../timeanddate.hpp"
+#include "../data_codecs.hpp"
 #include "../networking.hpp"
 
 using namespace httplib;
 
 
+#define CONFIG_FILE_NAME "config.txt"
+
+
+
 int main() {
-	Client client("localhost", SERVER_PORT);
+	
+	std::string hostname;
+	int port;
+	let config_file = std::ifstream(CONFIG_FILE_NAME);
+	if (config_file.is_open()) {
+		if (read_quoted_string(config_file, hostname) == Failure) {
+			printf("Couldn't read hostname from config file, resetting it to default.\n");
+			hostname = DEFAULT_SERVER_HOSTNAME;
+			port = DEFAULT_SERVER_PORT;
+			(std::ofstream(CONFIG_FILE_NAME) << quote_string(hostname) << "\n" << port).close();
+		} else {
+			config_file >> port;
+			if (config_file.fail()) {
+				printf("Couldn't read port from config file, resetting it to default.\n");
+				port = DEFAULT_SERVER_PORT;
+				(std::ofstream(CONFIG_FILE_NAME) << quote_string(hostname) << "\n" << port).close();
+			}
+		}
+	} else {
+		printf("Config file not found, creating a new one.\n");
+		hostname = DEFAULT_SERVER_HOSTNAME;
+		port = DEFAULT_SERVER_PORT;
+		(std::ofstream(CONFIG_FILE_NAME) << quote_string(hostname) << "\n" << port).close();
+	}
+	
+	
+	Client client(hostname, port);
 	
 	std::string input;
 	while (true) {
