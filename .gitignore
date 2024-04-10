@@ -3,3 +3,5 @@
 
 prototype/server/groups.txt
 prototype/server/users
+prototype/server/config.txt
+prototype/client/config.txt
