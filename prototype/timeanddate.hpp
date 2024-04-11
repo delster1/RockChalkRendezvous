@@ -4,7 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
-#include "common_utils.hpp"
+#include "core_utils.hpp"
 
 
 #define MINUTES_IN_DAY 1440
