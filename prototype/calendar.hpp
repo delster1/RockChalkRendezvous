@@ -23,7 +23,7 @@ enum RepeatType {
 };
 
 
-struct TimeBlock {
+struct TimeBlock { // MARK: TimeBlock
     std::string name;
     TimeAndDate start;
     TimeAndDate end;
@@ -106,7 +106,7 @@ struct TimeBlock {
 };
 
 
-struct Calendar {
+struct Calendar { // MARK: Calendar
     std::vector<TimeBlock> busy_times;
     
     inline Calendar() : busy_times(std::vector<TimeBlock>()) {}
