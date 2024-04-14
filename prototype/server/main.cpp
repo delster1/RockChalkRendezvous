@@ -108,6 +108,7 @@ Status leave_group(std::unordered_map<GroupID, Group>& groups, User& user, const
 
 
 
+// MARK: Main
 
 int main() {
 	Server server;
@@ -133,6 +134,7 @@ int main() {
 	
 	
 	
+	// MARK: Handlers
 	
 	server.Post(URL_PATTERNS[
 		Ping
@@ -396,6 +398,7 @@ int main() {
 	});
 	
 	
+	// MARK: Start server
 	
 	int port;
 	let config_file = std::ifstream(CONFIG_FILE_NAME);

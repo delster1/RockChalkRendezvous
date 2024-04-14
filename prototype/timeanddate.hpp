@@ -64,7 +64,7 @@ static const char DAY_NAMES[7][10] = {
 
 
 
-
+// MARK: Functions
 
 bool is_leap_year(i32 year) {
 	if (mod(year, 400) == 0) return true;
@@ -141,7 +141,7 @@ struct MonthAndDay {
 };
 
 
-struct TimeAndDate {
+struct TimeAndDate { // MARK: TimeAndDate
 	private:
 	u16 minute;
 	u16 day;
@@ -226,6 +226,9 @@ struct TimeAndDate {
 		snprintf(s, 64, "%d:%02d %s, %s %d %d", this->get_hour(), this->get_minute(), DAY_NAMES[this->get_day_of_week()], MONTH_NAMES[md.month], md.day, this->year);
 		return std::string(s);
 	}
+	
+	
+	// MARK: Helper methods
 	
 	MonthAndDay get_month_and_day() const { // these are together since it's basically the same computation
 		Month month = January;
