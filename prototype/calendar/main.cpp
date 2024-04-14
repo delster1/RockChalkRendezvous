@@ -18,7 +18,7 @@ int main () {
     TimeAndDate endTime = TimeAndDate::build(480, 1, 2024); // Assuming 8:00 AM on the same day
 
     // Adding a non-repeating time block
-    TimeBlock nonRepeatingBlock = {startTime, endTime, {RepeatType::NoRepeat, 0}};
+    TimeBlock nonRepeatingBlock = {startTime, endTime, {RepeatType::NoRepeat}, 0};
     my_cal.add_time(nonRepeatingBlock);
 
     // Adding a daily repeating time block

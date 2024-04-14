@@ -65,7 +65,7 @@ Status decode_vector(std::istream& stream, std::vector<T>& vector, const std::fu
 	vector.reserve(count);
 	
 	T value;
-	for (int i = 0; i < count; i++) {
+	for (int i = 0; i < int(count); i++) {
 		propagate(decode_function(stream, value));
 		vector.push_back(value);
 	}

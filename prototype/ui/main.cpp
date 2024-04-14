@@ -1,39 +1,33 @@
 #include <ncurses.h>
-#include <unistd.h> // for usleep()
-#include <string.h> // for strlen()
+#include "../timeanddate.hpp"
+#include "../calendar.hpp" // Your existing code
+// Include other necessary headers
 
 int main() {
-    // Initialize ncurses screen
+    // Initialize ncurses
     initscr();
-
-    // Turn off echoing of keys pressed
     noecho();
+    cbreak();
+    start_color();
+    init_pair(1, COLOR_CYAN, COLOR_BLACK);
 
-    // Enable keypad mode
-    keypad(stdscr, TRUE);
+    // Assuming calendar is already populated
+    Calendar myCalendar;
+    TimeAndDate startTime = TimeAndDate::build(360, 1, 2024); // Assuming 6:00 AM on the first day of the year 2024
+    TimeAndDate endTime = TimeAndDate::build(480, 1, 2024); // Assuming 8:00 AM on the same day
+    // Rendering logic
+    attron(COLOR_PAIR(1));
+    mvprintw(0, 0, "Calendar Busy Times:");
+    attroff(COLOR_PAIR(1));
 
-    // Loop until 'q' or ETX character ('\x03') is pressed
-    while (true) {
-        // Clear screen
-        clear();
-
-        // Print message
-        mvprintw(LINES / 2, COLS / 2 - strlen("Hello world") / 2, "Hello world");
-
-        // Refresh screen
-        refresh();
-
-        // Sleep for short duration to reduce CPU usage
-        usleep(100 * 1000);
-
-        // Check for user input
-        int ch = getch();
-        if (ch == '\x03' || ch == 'q') {
-            break;
-        }
+    // Dynamically display TimeBlocks
+    int y = 2; // Start from the second row
+    for (const auto& block : myCalendar.busy_times) {
+        mvprintw(y++, 0, "%s", block.to_string().c_str());
     }
 
-    // Deinitialize ncurses screen
+    refresh();
+    getch(); // Wait for user input to exit
     endwin();
 
     return 0;
