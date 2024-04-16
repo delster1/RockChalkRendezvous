@@ -4,10 +4,13 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
-
+WINDOW *create_newwin(int height, int width, int starty, int startx);
+void destroy_win(WINDOW *local_win);
 // Assume DAY_NAMES is defined and accessible
 // Example DAY_NAMES could be: const char* DAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+void new_window() {
 
+}
 void draw_calendar(TimeAndDate start, Calendar my_cal) {
     const int minutes_intervals = 96; // 15-minute intervals in a 24-hour day
     const int days_of_week = 7;  // Only 7 days for the calendar
@@ -39,18 +42,20 @@ void draw_calendar(TimeAndDate start, Calendar my_cal) {
     }
 
     refresh();
-    getch(); // Wait for user input to exit
-    endwin();
+  
 }
 
 int main() {
+    WINDOW *my_win;
+	int startx, starty, width, height;
+    int i = 2;
+	// int ch;
     initscr();
     noecho();
     cbreak();
     start_color();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_WHITE, COLOR_BLACK);
-
     Calendar myCalendar;
     TimeAndDate startTime = TimeAndDate::build(0, 7, 2024); // Assume this initializes at midnight
     TimeAndDate endTime = TimeAndDate::build(360, 7, 2024);  // 15 minutes into the day
@@ -59,6 +64,57 @@ int main() {
 
     TimeAndDate startCalendar = TimeAndDate::build(0, 3, 2024);
     draw_calendar(startCalendar, myCalendar);
-
+    keypad(stdscr, TRUE);		/* I need that nifty F1 	*/
+    
+	height = LINES / 4;
+	width = COLS;
+	starty = (LINES / 4)*3;	/* Calculating for a center placement */
+	startx = 0;	/* of the window		*/
+	printw("Press F1 to exit");
+	refresh();
+	my_win = create_newwin(height, width, starty, startx);
+    scrollok(my_win, true);
+	while(1)
+    {
+        wprintw(my_win, "%d - lots and lots of lines flowing down the terminal\n", i);
+        ++i;
+        wrefresh(my_win);
+    }
+	getch();	
+	endwin();			/* End curses mode		  */
     return 0;
+}
+
+WINDOW *create_newwin(int height, int width, int starty, int startx)
+{	WINDOW *local_win;
+
+	local_win = newwin(height, width, starty, startx);
+	box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 * lines			*/
+	wrefresh(local_win);		/* Show that box 		*/
+
+	return local_win;
+}
+
+void destroy_win(WINDOW *local_win)
+{	
+	/* box(local_win, ' ', ' '); : This won't produce the desired
+	 * result of erasing the window. It will leave it's four corners 
+	 * and so an ugly remnant of window. 
+	 */
+	wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+	/* The parameters taken are 
+	 * 1. win: the window on which to operate
+	 * 2. ls: character to be used for the left side of the window 
+	 * 3. rs: character to be used for the right side of the window 
+	 * 4. ts: character to be used for the top side of the window 
+	 * 5. bs: character to be used for the bottom side of the window 
+	 * 6. tl: character to be used for the top left corner of the window 
+	 * 7. tr: character to be used for the top right corner of the window 
+	 * 8. bl: character to be used for the bottom left corner of the window 
+	 * 9. br: character to be used for the bottom right corner of the window
+	 */
+	wrefresh(local_win);
+	delwin(local_win);
 }
