@@ -86,7 +86,9 @@ struct TimeBlock { // MARK: TimeBlock
         
         return Success;
     }
-    
+    bool includes(const TimeAndDate& point) const {
+        return start <= point && point <= end;
+    }
     std::string to_string() const {
         std::ostringstream oss;
         oss << "\n" << this->name << ":\nStart: " << this->start.to_string() << "\nEnd: " << this->end.to_string() << "\n";
@@ -141,7 +143,14 @@ struct Calendar { // MARK: Calendar
         }
         return out;
     }
-    
+    bool is_time_block_busy(const TimeAndDate& timePoint) const {
+        for (const TimeBlock& block : busy_times) {
+            if (block.includes(timePoint)) {
+                return true;
+            }
+        }
+        return false;
+    }
     void sort_busy_times() {
         std::sort(this->busy_times.begin(), this->busy_times.end(), [](const TimeBlock& a, const TimeBlock& b) {
             if (a.start != b.start) {
