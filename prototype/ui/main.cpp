@@ -35,6 +35,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
 
             TimeAndDate currentTime = start.add_days(day_of_week).add_minutes(time_of_day);
             bool is_busy = my_cal.is_time_block_busy(currentTime);
+            if (is_busy == true) 
             wattron(win, COLOR_PAIR(is_busy ? 1 : 2));
             mvwprintw(win, 2 + minutes_interval, x, "%s", is_busy ? "###" : "---");
             wattroff(win, COLOR_PAIR(is_busy ? 1 : 2));
@@ -52,6 +53,18 @@ void draw_interactions(WINDOW *win){
 
     wrefresh(win);
 
+}
+void draw_add_block(WINDOW *win){
+    wclear(win);
+    mvwprintw(win, 1, 0, "Enter the time block start");
+    wrefresh(win);
+
+    int ch = wgetch(win); // Get user input from the interaction window
+    while (ch != KEY_F(1)) { // F1 to exit
+        mvwprintw(win, 2, 0, "%c", ch);
+        wrefresh(win);
+        ch = wgetch(win);
+    }
 }
 int main() {
     initscr();
@@ -97,12 +110,13 @@ int main() {
                 break;
                 
             case 'j':
-            if (scroll_ct >= 0) {
-                scroll_ct--;
+                if (scroll_ct >= 0) {
+                    scroll_ct--;
+                    break;
+                }
                 break;
-            }
-            break;
-                
+            case '1':
+                draw_add_block(interact_win);
         }
         draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct); // Redraw the calendar
         wrefresh(interact_win);

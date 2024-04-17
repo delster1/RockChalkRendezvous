@@ -143,11 +143,14 @@ struct Calendar { // MARK: Calendar
         }
         return out;
     }
-    bool is_time_block_busy(const TimeAndDate& timePoint) const {
+    bool is_time_block_busy(const TimeAndDate& timePoint) const {\
+        int ct = 0;
         for (const TimeBlock& block : busy_times) {
+            
             if (block.includes(timePoint)) {
                 return true;
             }
+            ct++;
         }
         return false;
     }
