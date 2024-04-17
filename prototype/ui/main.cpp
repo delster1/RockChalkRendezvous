@@ -43,6 +43,16 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
 
     wrefresh(win);
 }
+
+void draw_interactions(WINDOW *win){
+    mvwprintw(win, 1, 0, "Press F1 to exit or 'j' and 'k' to scroll the above window.");
+    mvwprintw(win, 2, 0, "1) Add Time Block");
+    mvwprintw(win, 3, 0, "2) Remove Time Block");
+
+
+    wrefresh(win);
+
+}
 int main() {
     initscr();
     noecho();
@@ -72,14 +82,13 @@ int main() {
     draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct);
 
     // Interaction window setup
-    mvwprintw(interact_win, 1, 0, "Press F1 to exit or 'j' and 'k' to scroll.");
-    wrefresh(interact_win);
+    draw_interactions(interact_win);
     const int max_rows = getmaxy(calendar_win) - 2;  // Rows available for time slots
 
     int ch;
-    while ((ch = wgetch(interact_win)) != KEY_F(1)) { // Loop until F1 is pressed
+    while ((ch = wgetch(interact_win)) != 'q') { // Loop until F1 is pressed
         switch (ch) {
-            case 'j':
+            case 'k':
                 if (scroll_ct <= max_rows + 10){
                     scroll_ct++;
                     // Scroll down
@@ -87,7 +96,7 @@ int main() {
                 }
                 break;
                 
-            case 'k':
+            case 'j':
             if (scroll_ct >= 0) {
                 scroll_ct--;
                 break;
