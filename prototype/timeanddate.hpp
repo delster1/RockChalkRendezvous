@@ -281,6 +281,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 	TimeAndDate add_days(const i32 days) const {
 		return TimeAndDate::build(this->minute, this->day + days, this->year);
 	}
+	
 	// will move the day down to stay in the correct month
 	// i.e. August 31 + 1 month = September 30
 	TimeAndDate add_months(const i32 months) const {
@@ -289,20 +290,23 @@ struct TimeAndDate { // MARK: TimeAndDate
 			static_cast<Month>(mod(static_cast<i32>(md.month) + months, 12)),
 		this->year);
 	}
+	
 	// will wrap around to the next month
 	// i.e. August 31 + 1 month = October 1
-	// TimeAndDate add_months_wrap_day(const i32 months) const {
-	// 	MonthAndDay md = this->get_month_and_day();
-	// 	return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
-	// 		static_cast<Month>((static_cast<i32>(md.month) + months, 12)),
-	// 	this->year);
-	// }
+	TimeAndDate add_months_wrap_day(const i32 months) const {
+		MonthAndDay md = this->get_month_and_day();
+		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day,
+			static_cast<Month>((static_cast<i32>(md.month) + months, 12)),
+		this->year);
+	}
+	
 	// leap day won't shift everything off by a day
 	// February 29 2024 + 1 year = February 28 2025
 	TimeAndDate add_years(const i32 years) const {
 		MonthAndDay md = this->get_month_and_day();
 		return TimeAndDate::build_from_month(this->minute, md.day, md.month, this->year + years);
 	}
+	
 	// February 29 2024 + 1 year = March 1 2025
 	TimeAndDate add_years_wrap_day(const i32 years) const {
 		MonthAndDay md = this->get_month_and_day();
