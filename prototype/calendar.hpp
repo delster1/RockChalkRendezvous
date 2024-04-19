@@ -20,6 +20,7 @@ enum RepeatType {
     Yearly   = 'Y',
 };
 
+// Core functionality of time with a start/end time
 struct TimeBlock { // MARK: TimeBlock
     std::string name;
     TimeAndDate start;
@@ -38,6 +39,7 @@ struct TimeBlock { // MARK: TimeBlock
     }
     
     inline bool is_valid() const {
+        // ensure the start time is before the end time
         return this->start <= this->end;
     }
     
@@ -47,10 +49,18 @@ struct TimeBlock { // MARK: TimeBlock
     }
 
     inline bool within(const TimeBlock& other) const {
+        // checks if one time block is inside another
         return other.start <= this->start && other.end >= this->end;
+    }
+
+    bool includes(const TimeAndDate& point) const {
+        // check if a time point is within the current block
+        return start <= point && point <= end;
     }
     
     
+    // encoding and decoding
+
     static inline std::string encode_static(const TimeBlock& block) { return block.encode(); }
     std::string encode() const {
         std::ostringstream oss;
@@ -83,9 +93,7 @@ struct TimeBlock { // MARK: TimeBlock
         
         return Success;
     }
-    bool includes(const TimeAndDate& point) const {
-        return start <= point && point <= end;
-    }
+
     std::string to_string() const {
         std::ostringstream oss;
         oss << "\n" << this->name << ":\nStart: " << this->start.to_string() << "\nEnd: " << this->end.to_string() << "\n";
@@ -103,7 +111,7 @@ struct TimeBlock { // MARK: TimeBlock
     }
 };
 
-
+// Each calendar consists of a list of TimeBlocks
 struct Calendar { // MARK: Calendar
     std::vector<TimeBlock> busy_times;
     
@@ -121,13 +129,17 @@ struct Calendar { // MARK: Calendar
         return true;
     }
     
+    // This function returns a vector of TimeBlocks that are busy within a given day.
+    // It does this by creating a range from the start of the given day to the start of the next day,
+    // and then calling the get_busy_times_in_range function with this range.
     inline std::vector<TimeBlock> get_busy_times_in_day(const TimeAndDate& day) {
         return this->get_busy_times_in_range(
             TimeAndDate::build(0, day.get_day_of_year(), day.get_year()),
             TimeAndDate::build(0, day.get_day_of_year() + 1, day.get_year())
         );
     }
-    
+
+    // This function returns a vector of TimeBlocks that are busy within a given interval.
     std::vector<TimeBlock> get_busy_times_in_range(const TimeAndDate& start, const TimeAndDate& end) {
         // todo: make work with repeating blocks
         let range = TimeBlock(start, end, NoRepeat, 0);
@@ -139,6 +151,8 @@ struct Calendar { // MARK: Calendar
         }
         return out;
     }
+
+    // Takes a time point and checks if it is included in the block's busy times
     bool is_time_block_busy(const TimeAndDate& timePoint) const {\
         int ct = 0;
         for (const TimeBlock& block : busy_times) {
@@ -150,6 +164,8 @@ struct Calendar { // MARK: Calendar
         }
         return false;
     }
+
+    // sorts busy time by ascending start time
     void sort_busy_times() {
         std::sort(this->busy_times.begin(), this->busy_times.end(), [](const TimeBlock& a, const TimeBlock& b) {
             if (a.start != b.start) {
@@ -177,5 +193,7 @@ struct Calendar { // MARK: Calendar
     
     
 };
+
+
 
 #endif
