@@ -45,7 +45,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
     wrefresh(win);
 }
 
-void draw_interactions(WINDOW *win){
+void draw_interactions(WINDOW* win){
     mvwprintw(win, 1, 0, "Press F1 to exit or 'j' and 'k' to scroll the above window.");
     mvwprintw(win, 2, 0, "1) Add Time Block");
     mvwprintw(win, 3, 0, "2) Remove Time Block");
@@ -54,7 +54,8 @@ void draw_interactions(WINDOW *win){
     wrefresh(win);
 
 }
-void draw_add_block(WINDOW *win){
+
+void draw_add_block(WINDOW* win){
     wclear(win);
     mvwprintw(win, 1, 0, "Enter the time block start");
     wrefresh(win);
@@ -66,6 +67,7 @@ void draw_add_block(WINDOW *win){
         ch = wgetch(win);
     }
 }
+
 int main() {
     initscr();
     noecho();

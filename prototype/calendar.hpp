@@ -12,8 +12,6 @@
 #include "core_utils.hpp"
 #include "timeanddate.hpp"
 
-
-
 enum RepeatType {
     NoRepeat = 'N',
     Daily    = 'D',
@@ -21,7 +19,6 @@ enum RepeatType {
     Monthly  = 'M',
     Yearly   = 'Y',
 };
-
 
 struct TimeBlock { // MARK: TimeBlock
     std::string name;
@@ -104,7 +101,6 @@ struct TimeBlock { // MARK: TimeBlock
         
         return oss.str();
     }
-    
 };
 
 
@@ -164,6 +160,9 @@ struct Calendar { // MARK: Calendar
         });
     }
     
+    void add_time(TimeBlock& block) {
+        
+    }
     
     static inline std::string encode_static(const Calendar& calendar) { return calendar.encode(); }
     std::string encode() const {
@@ -178,7 +177,5 @@ struct Calendar { // MARK: Calendar
     
     
 };
-
-
 
 #endif
