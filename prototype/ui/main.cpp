@@ -55,18 +55,62 @@ void draw_interactions(WINDOW* win){
 
 }
 
-void draw_add_block(WINDOW* win){
+TimeAndDate convert_string_to_time(char time_string[22]) {  
+    int hour, minute, month, day, year;
+    sscanf(time_string, "%d:%d %d %d %d", &hour, &minute, &month, &day, &year);
+
+    // Convert to days, minutes, and year
+    int days = (month - 1) * 30 + day;
+    int minutes = hour * 60 + minute;
+
+    TimeAndDate time = TimeAndDate::build(minutes, days, year);
+    return time;
+
+}
+
+TimeBlock run_add_block(WINDOW* win) {
+    echo();  // Enable echoing of characters typed by the user
+    keypad(win, TRUE);  // Enable keypad for the window to handle function keys
+    
+    // Clear the window and prepare for input
     wclear(win);
-    mvwprintw(win, 1, 0, "Enter the time block start");
+    mvwprintw(win, 1, 0, "Enter the time block start Time: 24-hour time:minutes Month(Numerical) Day Year (press Enter when done): ");
     wrefresh(win);
 
-    int ch = wgetch(win); // Get user input from the interaction window
-    while (ch != KEY_F(1)) { // F1 to exit
-        mvwprintw(win, 2, 0, "%c", ch);
-        wrefresh(win);
-        ch = wgetch(win);
-    }
+    char start_time_string[22] = {0};  // Buffer to hold the input string
+
+    wmove(win, 2, 0);
+    wgetnstr(win, start_time_string, 22);  
+
+    // Optional: display the input for confirmation
+    mvwprintw(win, 3, 0, "You entered: %s", start_time_string);
+    wrefresh(win);
+
+    mvwprintw(win, 4, 0, "Enter the time block end Time: 24-hour time:minutes Month Day Year (press Enter when done): ");
+    wrefresh(win);
+
+    char end_time_string[22] = {0};
+
+    wmove(win, 5, 0);
+    wgetnstr(win, end_time_string, 22);  
+    // Optional: display the input for confirmation
+    mvwprintw(win, 6, 0, "You entered: %s", end_time_string);
+    wrefresh(win);
+    // Wait for a key press before continuing
+    TimeAndDate start_time = convert_string_to_time(start_time_string);
+    TimeAndDate end_time = convert_string_to_time(end_time_string);
+
+    TimeBlock new_block = {start_time, end_time, RepeatType::NoRepeat, 0};
+    std::string my_timeBlock_string = TimeBlock::encode_static(new_block);
+    wclear(win);
+    mvwprintw(win, 1, 0, "%s", my_timeBlock_string.c_str());
+
+    wgetch(win);
+
+    noecho();  // Turn off echoing of characters typed
+    return new_block;
 }
+
 
 int main() {
     initscr();
@@ -118,7 +162,11 @@ int main() {
                 }
                 break;
             case '1':
-                draw_add_block(interact_win);
+                TimeBlock new_time = run_add_block(interact_win);
+                myCalendar.add_time(new_time);
+                wrefresh(calendar_win);
+                draw_interactions(interact_win);
+                break;
         }
         draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct); // Redraw the calendar
         wrefresh(interact_win);

@@ -16,6 +16,9 @@ struct User {
 	inline User() {}
 	inline User(std::string username, std::string password) : username(username), password(password) {}
 	
+	static void set_calendar(const User& user, Calendar new_calendar) {
+		user.calendar = new_calendar;
+	} 
 	static inline std::string encode_static(const User& user) { return user.encode(); }
 	std::string encode() const {
 		let s = std::ostringstream();

@@ -176,8 +176,12 @@ struct Calendar { // MARK: Calendar
         });
     }
     
-    void add_time(TimeBlock& block) {
-        
+    Status add_time(const TimeBlock& block) {
+        if (block.start < block.end) {
+            busy_times.push_back(block);
+            return Success;
+        }
+        return Failure;
     }
     
     static inline std::string encode_static(const Calendar& calendar) { return calendar.encode(); }
