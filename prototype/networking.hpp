@@ -8,6 +8,7 @@
 #define DEFAULT_SERVER_HOSTNAME "localhost"
 
 
+// must match URL_PATTERNS
 enum ClientRequest {
 	Ping              = 0,
 	CreateAccount     = 1,
@@ -24,6 +25,7 @@ enum ClientRequest {
 	LeaveGroup        = 12,
 };
 
+// must match ClientRequest - what to look for in URL
 static const std::string URL_PATTERNS[] = {
 	"/ping",
 	"/create_account",
