@@ -35,7 +35,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
 
             TimeAndDate currentTime = start.add_days(day_of_week).add_minutes(time_of_day);
             bool is_busy = my_cal.is_time_block_busy(currentTime);
-            if (is_busy == true) 
+            
             wattron(win, COLOR_PAIR(is_busy ? 1 : 2));
             mvwprintw(win, 2 + minutes_interval, x, "%s", is_busy ? "###" : "---");
             wattroff(win, COLOR_PAIR(is_busy ? 1 : 2));
@@ -47,8 +47,9 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
 
 void draw_interactions(WINDOW* win){
     mvwprintw(win, 1, 0, "Press F1 to exit or 'j' and 'k' to scroll the above window.");
-    mvwprintw(win, 2, 0, "1) Add Time Block");
-    mvwprintw(win, 3, 0, "2) Remove Time Block");
+    mvwprintw(win, 2, 0, "Press A/D to scroll Left/Right in the calendar.");
+    mvwprintw(win, 3, 0, "1) Add Time Block");
+    mvwprintw(win, 4, 0, "2) Remove Time Block");
 
 
     wrefresh(win);
@@ -67,40 +68,92 @@ TimeAndDate convert_string_to_time(char time_string[22]) {
     return time;
 
 }
+std::string prompt_user_for_time(WINDOW* win){
+    wclear(win);
+    mvwprintw(win, 1, 0, "Enter the time block start Time: 24-hour time:minutes Month(Numerical) Day Year (press Enter when done): ");
+    wrefresh(win);
 
+    char time_string[22] = {0};  // Buffer to hold the input string
+
+    wmove(win, 2, 0);
+    wgetnstr(win, time_string, 22);  
+
+    // Optional: display the input for confirmation
+    mvwprintw(win, 3, 0, "You entered: %s", time_string);
+    wrefresh(win);
+    return std::string(time_string);
+}
+
+char prompt_user_for_repeat(WINDOW* win){
+    wclear(win);
+    mvwprintw(win, 1, 0, "Please enter the repeat type of this block:\n\t\'N\' - None\n\t\'D\' - Daily\n\t\'W\' - Weekly\n\t\'M\' - Monthly\n\t\'Y\' - Yearly");
+    wrefresh(win);
+
+    char repeat[1] = {0};  // Buffer to hold the input string
+
+    wmove(win, 7, 0);
+    wgetnstr(win, repeat, 1);  
+
+    return repeat[0];
+}
+int prompt_user_for_repeat_interval(WINDOW* win){
+    wclear(win);
+    mvwprintw(win, 1, 0, "Please enter the number of repetitions for this block:");
+    wrefresh(win);
+
+    char repeat[3] = {0};  // Buffer to hold the input string
+
+    wmove(win, 7, 0);
+    wgetnstr(win, repeat, 10);  
+
+    int repeat_interval = atoi(repeat);
+    return repeat_interval;
+}
 TimeBlock run_add_block(WINDOW* win) {
     echo();  // Enable echoing of characters typed by the user
     keypad(win, TRUE);  // Enable keypad for the window to handle function keys
     
     // Clear the window and prepare for input
+    char start_time_string[22];
+    strcpy(start_time_string, prompt_user_for_time(win).c_str());
     wclear(win);
-    mvwprintw(win, 1, 0, "Enter the time block start Time: 24-hour time:minutes Month(Numerical) Day Year (press Enter when done): ");
-    wrefresh(win);
+    char end_time_string[22];
+    strcpy(end_time_string, prompt_user_for_time(win).c_str());
+    wclear(win);
 
-    char start_time_string[22] = {0};  // Buffer to hold the input string
-
-    wmove(win, 2, 0);
-    wgetnstr(win, start_time_string, 22);  
-
+ 
     // Optional: display the input for confirmation
-    mvwprintw(win, 3, 0, "You entered: %s", start_time_string);
-    wrefresh(win);
-
-    mvwprintw(win, 4, 0, "Enter the time block end Time: 24-hour time:minutes Month Day Year (press Enter when done): ");
-    wrefresh(win);
-
-    char end_time_string[22] = {0};
-
-    wmove(win, 5, 0);
-    wgetnstr(win, end_time_string, 22);  
-    // Optional: display the input for confirmation
-    mvwprintw(win, 6, 0, "You entered: %s", end_time_string);
     wrefresh(win);
     // Wait for a key press before continuing
     TimeAndDate start_time = convert_string_to_time(start_time_string);
     TimeAndDate end_time = convert_string_to_time(end_time_string);
-
-    TimeBlock new_block = {start_time, end_time, RepeatType::NoRepeat, 0};
+    char repeat = prompt_user_for_repeat(win);
+    unsigned int repeat_interval = 0;
+    RepeatType repeat_type;
+    switch (repeat) {
+        case 'N':
+            repeat_type = RepeatType::NoRepeat;
+            break;
+        case 'D':
+            repeat_type = RepeatType::Daily;
+            break;
+        case 'W':
+            repeat_type = RepeatType::Weekly;
+            break;
+        case 'M':
+            repeat_type = RepeatType::Monthly;
+            break;
+        case 'Y':
+            repeat_type = RepeatType::Yearly;
+            break;
+        default:
+            repeat_type = RepeatType::NoRepeat;
+            break;
+    }
+    if (repeat != 'N'){
+        repeat_interval = prompt_user_for_repeat_interval(win);
+    }
+    TimeBlock new_block = {start_time, end_time, repeat_type, repeat_interval};
     std::string my_timeBlock_string = TimeBlock::encode_static(new_block);
     wclear(win);
     mvwprintw(win, 1, 0, "%s", my_timeBlock_string.c_str());
@@ -161,12 +214,23 @@ int main() {
                     break;
                 }
                 break;
+            case 'a':
+                startCalendar = startCalendar.add_days(-7);
+                draw_calendar(calendar_win, startCalendar, myCalendar, 0);
+                wrefresh(calendar_win);
+                break;
+            case 'd':
+                startCalendar = startCalendar.add_days(7);
+                draw_calendar(calendar_win, startCalendar, myCalendar, 0);
+                wrefresh(calendar_win);
+                break;
             case '1':
                 TimeBlock new_time = run_add_block(interact_win);
                 myCalendar.add_time(new_time);
                 wrefresh(calendar_win);
                 draw_interactions(interact_win);
                 break;
+
         }
         draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct); // Redraw the calendar
         wrefresh(interact_win);
