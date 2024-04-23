@@ -10,6 +10,7 @@
 
 typedef usize GroupID;
 
+// encodes group id into a hex string
 std::string encode_group_id(const GroupID& id) {
 	let s = std::ostringstream();
 	let n = id;
@@ -22,6 +23,7 @@ std::string encode_group_id(const GroupID& id) {
 	return s.str();
 }
 
+// decodes from a hex string into a group id
 Status decode_group_id(std::istream& stream, GroupID& id) {
 	char c;
 	GroupID n = 0;

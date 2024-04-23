@@ -94,6 +94,7 @@ struct TimeBlock { // MARK: TimeBlock
         return Success;
     }
 
+    // Turning the TimeBlock into a string
     std::string to_string() const {
         std::ostringstream oss;
         oss << "\n" << this->name << ":\nStart: " << this->start.to_string() << "\nEnd: " << this->end.to_string() << "\n";

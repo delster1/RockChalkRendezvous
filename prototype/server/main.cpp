@@ -25,6 +25,7 @@ using namespace httplib;
 #define return_code(a) return response.set_content(std::string(1, static_cast<char>(a)), "text/plain")
 
 
+// account creation, group management, and calendar sync
 
 struct LoginResult {
 	Status status;
@@ -40,14 +41,17 @@ LoginResult login(std::istream& message) {
 	
 	// todo: username and password screening
 	
+    // getting the user file, failing to login if no account exists
 	let user_file = std::ifstream(USER_FOLDER_PATH(username));
 	if (!user_file.is_open()) return { Failure, IncorrectLogin };
 	
 	User user;
+    // password format check
 	if (user.decode(user_file) == Failure) {
 		printf("Couldn't read password for '%s', user data file is improperly formatted.\n", username.c_str());
 		return { Failure, IncorrectLogin, user };
 	}
+    // wrong password
 	if (password != user.password) return { Failure, IncorrectLogin, user };
 	
 	return { Success, AccountOk, user };
@@ -60,8 +64,10 @@ ServerResponse create_account(std::istream& message) {
 	if (read_quoted_string(message, username) == Failure) return BadData;
 	if (read_quoted_string(message, password) == Failure) return BadData;
 	
+    // username invalid
 	if (!is_username_valid(username)) return UsernameUnavailable;
 	
+    // username taken
 	let test_user_file = std::ifstream(USER_FOLDER_PATH(username));
 	if (test_user_file.is_open()) {
 		test_user_file.close();
@@ -71,12 +77,14 @@ ServerResponse create_account(std::istream& message) {
 	// todo: password screening
 	// InvalidPassword unused otherwise
 	
+    // creates a new user file with username/password
 	(std::ofstream(USER_FOLDER_PATH(username)) << User(username, password).encode()).close();
 	
 	return AccountOk;
 }
 
 inline void save_user_file(const User& user) {
+    // saves entire user data to file
 	(std::ofstream(USER_FOLDER_PATH(user.username)) << user.encode()).close();
 }
 
@@ -114,12 +122,14 @@ int main() {
 	Server server;
 	let static groups = std::unordered_map<GroupID, Group>();
 	
+    // open groups file to parse
 	let groups_file_in = std::ifstream(GROUPS_FILE_NAME);
 	if (!groups_file_in.is_open()) {
 		printf("Couldn't open groups.txt\n");
 		return 1;
 	}
 	
+    // parsing groups file
 	while (groups_file_in.good()) {
 		Group group;
 		if (group.decode(groups_file_in) == Failure) break;
@@ -135,13 +145,16 @@ int main() {
 	
 	
 	// MARK: Handlers
+    // users send id alongside message to indicate what they want to do
 	
+    // Ping -> PingResponse
 	server.Post(URL_PATTERNS[
 		Ping
 	], [&](const Request& request, Response& response) {
 		return_code(PingResponse);
 	});
 	
+    // CreateAccount -> create_account(msg)
 	server.Post(URL_PATTERNS[
 		CreateAccount
 	], [&](const Request& request, Response& response) {
@@ -149,7 +162,7 @@ int main() {
 		return_code(create_account(message));
 	});
 	
-	
+	// CheckUsername -> check username validity / availability
 	server.Post(URL_PATTERNS[
 		CheckUsername
 	], [&](const Request& request, Response& response) {
@@ -166,7 +179,7 @@ int main() {
 		} else return_code(UsernameAvailable);
 	});
 	
-	
+	// ValidateAccount -> login(msg)
 	server.Post(URL_PATTERNS[
 		ValidateAccount
 	], [&](const Request& request, Response& response) {
@@ -176,6 +189,7 @@ int main() {
 	});
 	
 	
+    // DeleteAccount -> attempt to delete account
 	server.Post(URL_PATTERNS[
 		DeleteAccount
 	], [&](const Request& request, Response& response) {
@@ -188,7 +202,8 @@ int main() {
 		return_code(AccountDeleted);
 	});
 	
-	
+    
+    // GetUserCalendar -> get encoded user calendar
 	server.Post(URL_PATTERNS[
 		GetUserCalendar
 	], [&](const Request& request, Response& response) {
@@ -200,6 +215,7 @@ int main() {
 	});
 	
 	
+    // SetUserCalendar -> set user cal after login(msg)
 	server.Post(URL_PATTERNS[
 		SetUserCalendar
 	], [&](const Request& request, Response& response) {
@@ -217,6 +233,7 @@ int main() {
 	});
 	
 	
+    // GetGroups(user) -> get encoded groups
 	server.Post(URL_PATTERNS[
 		GetGroups
 	], [&](const Request& request, Response& response) {
@@ -240,6 +257,7 @@ int main() {
 	});
 	
 	
+    // GetGroupCalendars(user, group_id)
 	server.Post(URL_PATTERNS[
 		GetGroupCalendars
 	], [&](const Request& request, Response& response) {
@@ -285,6 +303,7 @@ int main() {
 	});
 	
 	
+    // CreateGroup(user, group_name)
 	server.Post(URL_PATTERNS[
 		CreateGroup
 	], [&](const Request& request, Response& response) {
@@ -314,6 +333,7 @@ int main() {
 	});
 	
 	
+    // JoinGroup(user, group_id)
 	server.Post(URL_PATTERNS[
 		JoinGroup
 	], [&](const Request& request, Response& response) {
@@ -332,6 +352,7 @@ int main() {
 		auto pair_ptr = groups.find(id);
 		if (pair_ptr == groups.end()) return_code(InvalidGroup);
 		
+        // look up user in group
 		auto member_ptr = std::find(pair_ptr->second.members.begin(), pair_ptr->second.members.end(), r.user.username);
 		if (member_ptr == pair_ptr->second.members.end()) {
 			pair_ptr->second.members.push_back(r.user.username);
@@ -346,6 +367,7 @@ int main() {
 	});
 	
 	
+    // RenameGroup(user, group_id, new_name)
 	server.Post(URL_PATTERNS[
 		RenameGroup
 	], [&](const Request& request, Response& response) {
@@ -381,6 +403,7 @@ int main() {
 	});
 	
 	
+    // LeaveGroup(user, group_id)
 	server.Post(URL_PATTERNS[
 		LeaveGroup
 	], [&](const Request& request, Response& response) {
@@ -400,6 +423,7 @@ int main() {
 	
 	// MARK: Start server
 	
+    // init variables with optional config file
 	int port;
 	let config_file = std::ifstream(CONFIG_FILE_NAME);
 	if (config_file.is_open()) {
@@ -416,15 +440,18 @@ int main() {
 	}
 	
 	
+    // create server thread
 	let http_thread = std::thread([&]() {
 		printf("Starting server\n");
 		server.listen("0.0.0.0", port);
 		printf("Exiting server\n");
 	});
 	
+    // wait 1s for server to start
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	
 	std::string input;
+    // core server loop
 	while (true) {
 		std::cin >> input;
 		if (input == "stop" || input == "quit" || input == "exit") break;
@@ -437,7 +464,8 @@ int main() {
 		}
 	}
 	
-	
+	// save groups to file
+	    
 	let groups_file_out = std::ofstream(GROUPS_FILE_NAME);
 	for (const std::pair<const GroupID, Group>& pair : groups) {
 		groups_file_out << pair.second.encode() << "\n";
