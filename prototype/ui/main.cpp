@@ -49,21 +49,21 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
         }
     }
 
+
     wrefresh(win);
 }
 
-// scrolling between time blocks
-void draw_remove_calendar(WINDOW *win, TimeAndDate start, Calendar& my_cal, int selected_index) {
+void draw_remove_calendar(WINDOW *win, Calendar& my_cal, int selected_index) {
     wclear(win);
-    const int days_of_week = 7;
+    // const int days_of_week = 7;
 
     // print the days of the week
     wattron(win, COLOR_PAIR(1));
     mvwprintw(win, 1, 0, "Time");
-    for (int i = 0; i < days_of_week; ++i) {
-        TimeAndDate day = start.add_days(i);
-        mvwprintw(win, 1, 5 + i * 20, "%s", day.to_string().c_str());
-    }
+    // for (int i = 0; i < days_of_week; ++i) {
+    //     TimeAndDate day = start.add_days(i);
+    //     mvwprintw(win, 1, 5 + i * 20, "%s", day.to_string().c_str());
+    // }
     wattroff(win, COLOR_PAIR(1));
 
     // print the time blocks
@@ -96,8 +96,7 @@ void draw_interactions(WINDOW* win){
 
 }
 
-// give removal interactions for time blocks
-void draw_remove_interactions(WINDOW* interact_win, Calendar& my_cal) {
+void draw_remove_interactions(WINDOW* interact_win, WINDOW *calendar_win, Calendar& my_cal) {
     int selected_index = 0;
     int ch;
     bool running = true;
@@ -112,16 +111,17 @@ void draw_remove_interactions(WINDOW* interact_win, Calendar& my_cal) {
                 if (selected_index > 0) selected_index--;
                 break;
             case KEY_DOWN:
-                if (selected_index <= static_cast<int>(my_cal.busy_times.size()) - 1) selected_index++;
+                if (selected_index < static_cast<int>(my_cal.busy_times.size()) - 1) selected_index++;
                 break;
             case '\n':  // User confirms deletion
                 my_cal.busy_times.erase(my_cal.busy_times.begin() + selected_index);
-                if (selected_index >= static_cast<int>(my_cal.busy_times.size())) selected_index = fmax(0, int(my_cal.busy_times.size()) - 1);
+                if (selected_index > static_cast<int>(my_cal.busy_times.size())) selected_index = fmax(0, int(my_cal.busy_times.size()) - 1);
                 break;
             case 'q':  // Exit loop
                 running = false;
                 break;
         }
+        draw_remove_calendar(calendar_win, my_cal, selected_index);
     }
 }
 
@@ -268,6 +268,11 @@ int main() {
     TimeAndDate endTime = TimeAndDate::build(360, 7, 2024); // 6:00 AM
     TimeBlock my_block = {startTime, endTime, RepeatType::NoRepeat, 0};
     myCalendar.busy_times.push_back(my_block);
+
+    TimeAndDate startTime_2 = TimeAndDate::build(720, 7, 2024); // Midnight
+    TimeAndDate endTime_2 = TimeAndDate::build(900, 7, 2024); // 6:00 AM
+    TimeBlock my_block_2 = {startTime_2, endTime_2, RepeatType::NoRepeat, 0};
+    myCalendar.busy_times.push_back(my_block_2);
     TimeBlock new_time;
     TimeAndDate startCalendar = TimeAndDate::build(0, 3, 2024);
     draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct);
@@ -311,8 +316,8 @@ int main() {
                 draw_interactions(interact_win);
                 break;
             case '2':
-                draw_remove_calendar(calendar_win, startCalendar, myCalendar, 0);
-                draw_remove_interactions(interact_win, myCalendar);
+                draw_remove_calendar(calendar_win, myCalendar, 0);
+                draw_remove_interactions(interact_win, calendar_win,myCalendar);
                 break;
         }
         draw_calendar(calendar_win, startCalendar, myCalendar, scroll_ct); // Redraw the calendar
