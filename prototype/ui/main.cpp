@@ -302,6 +302,7 @@ int main() {
                 break;
             case 'a':
                 startCalendar = startCalendar.add_days(-7);
+                
                 draw_calendar(calendar_win, startCalendar, myCalendar, 0);
                 wrefresh(calendar_win);
                 break;
