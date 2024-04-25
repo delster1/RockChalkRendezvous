@@ -155,7 +155,6 @@ struct Calendar { // MARK: Calendar
     // Takes a time point and checks if it is included in the block's busy times
     bool is_time_block_busy(const TimeAndDate& timePoint) const {\
         for (const TimeBlock& block : busy_times) {
-            
             if (block.includes(timePoint)) {
                 return true;
             }
