@@ -6,6 +6,7 @@
 #include "group.hpp"
 #include "calendar.hpp"
 
+// this file defines the core user data structure and username validity checking
 
 struct User {
 	std::string username;
@@ -44,6 +45,7 @@ static const char USERNAME_DISALLOWED_CHARACTERS[] = "<>:\"/\\|?*";
 
 bool is_username_valid(const std::string& username) {
 	for (char c : username) {
+        // if not alphanumeric or if in disallowed chars, return false
 		if (c & 0b11100000 == 0) return false;
 		for (const char* p = USERNAME_DISALLOWED_CHARACTERS; *p != 0; p++) {
 			if (c == *p) return false;

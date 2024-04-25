@@ -5,11 +5,14 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+
 WINDOW *create_newwin(int height, int width, int starty, int startx);
 void destroy_win(WINDOW *local_win);
 // Assume DAY_NAMES is defined and accessible
 // Example DAY_NAMES could be: const char* DAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
+// draw calendar to given window
+// input: window, start time, calendar object, and scroll offset
 void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_offset) {
     if (scroll_offset < 0 ){
         scroll_offset = 0;
@@ -20,12 +23,15 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
     const int max_rows = getmaxy(win) - 2;  // Rows available for time slots
     wattron(win, COLOR_PAIR(1));
     mvwprintw(win, 1, 0, "Time");
+    // print the days of the week
     for (int i = 0; i < days_of_week; ++i) {
         TimeAndDate day = start.add_days(i);
         mvwprintw(win, 1, 5 + i * 20, "%s", day.to_string().c_str());
     }
     wattroff(win, COLOR_PAIR(1));
 
+    // loop through the time intervals and days of the week
+    // prints busy times as # and free times as -
     for (int minutes_interval = 0; minutes_interval < max_rows; ++minutes_interval) {
         for (int day_of_week = 0; day_of_week < days_of_week; ++day_of_week) {
             int x = 5 + day_of_week * 20; // 20 spaces per column for spacing
@@ -46,10 +52,12 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
     wrefresh(win);
 }
 
+// scrolling between time blocks
 void draw_remove_calendar(WINDOW *win, TimeAndDate start, Calendar& my_cal, int selected_index) {
     wclear(win);
     const int days_of_week = 7;
 
+    // print the days of the week
     wattron(win, COLOR_PAIR(1));
     mvwprintw(win, 1, 0, "Time");
     for (int i = 0; i < days_of_week; ++i) {
@@ -58,6 +66,7 @@ void draw_remove_calendar(WINDOW *win, TimeAndDate start, Calendar& my_cal, int 
     }
     wattroff(win, COLOR_PAIR(1));
 
+    // print the time blocks
     int line = 2;
     for (int i = 0; i < static_cast<int>(my_cal.busy_times.size()); ++i) {
         int x = 5;
@@ -75,6 +84,7 @@ void draw_remove_calendar(WINDOW *win, TimeAndDate start, Calendar& my_cal, int 
     wrefresh(win);
 }
 
+// draw the controls to the window
 void draw_interactions(WINDOW* win){
     mvwprintw(win, 1, 0, "Press F1 to exit or 'j' and 'k' to scroll the above window.");
     mvwprintw(win, 2, 0, "Press A/D to scroll Left/Right in the calendar.");
@@ -86,6 +96,7 @@ void draw_interactions(WINDOW* win){
 
 }
 
+// give removal interactions for time blocks
 void draw_remove_interactions(WINDOW* interact_win, Calendar& my_cal) {
     int selected_index = 0;
     int ch;
@@ -115,6 +126,7 @@ void draw_remove_interactions(WINDOW* interact_win, Calendar& my_cal) {
 }
 
 
+// Convert a string to a TimeAndDate object
 TimeAndDate convert_string_to_time(char time_string[22]) {  
     int hour, minute, month, day, year;
     sscanf(time_string, "%d:%d %d %d %d", &hour, &minute, &month, &day, &year);
@@ -128,6 +140,7 @@ TimeAndDate convert_string_to_time(char time_string[22]) {
 
 }
 
+// ask user for a time given as a string
 std::string prompt_user_for_time(WINDOW* win){
     wclear(win);
     mvwprintw(win, 1, 0, "Enter the time block start Time: 24-hour time:minutes Month(Numerical) Day Year (press Enter when done): ");
@@ -144,7 +157,8 @@ std::string prompt_user_for_time(WINDOW* win){
     return std::string(time_string);
 }
 
-char prompt_user_for_repeat(WINDOW* win){
+// ask user for repeat type of the block
+char prompt_user_for_repeat(WINDOW* win) {
     wclear(win);
     mvwprintw(win, 1, 0, "Please enter the repeat type of this block:\n\t\'N\' - None\n\t\'D\' - Daily\n\t\'W\' - Weekly\n\t\'M\' - Monthly\n\t\'Y\' - Yearly");
     wrefresh(win);
@@ -157,6 +171,7 @@ char prompt_user_for_repeat(WINDOW* win){
     return repeat[0];
 }
 
+// ask user for time block repeat interval
 int prompt_user_for_repeat_interval(WINDOW* win){
     wclear(win);
     mvwprintw(win, 1, 0, "Please enter the number of repetitions for this block:");
@@ -171,6 +186,7 @@ int prompt_user_for_repeat_interval(WINDOW* win){
     return repeat_interval;
 }
 
+// add time block to calendar
 TimeBlock run_add_block(WINDOW* win) {
     echo();  // Enable echoing of characters typed by the user
     keypad(win, TRUE);  // Enable keypad for the window to handle function keys
@@ -245,6 +261,7 @@ int main() {
     scrollok(calendar_win, TRUE);  // Enable scrolling for the calendar window
     keypad(interact_win, TRUE);    // Enable keypad input for interaction window
     int scroll_ct = 0;
+
     // Calendar setup
     Calendar myCalendar;
     TimeAndDate startTime = TimeAndDate::build(0, 7, 2024); // Midnight
@@ -259,6 +276,7 @@ int main() {
     draw_interactions(interact_win);
     const int max_rows = getmaxy(calendar_win) - 2;  // Rows available for time slots
 
+    // main calendar controls
     int ch;
     while ((ch = wgetch(interact_win)) != 'q') { // Loop until F1 is pressed
         switch (ch) {
@@ -309,6 +327,7 @@ int main() {
 }
 
 
+// create a new window with defined x, y, width, and height
 WINDOW *create_newwin(int height, int width, int starty, int startx) {
     WINDOW *local_win = newwin(height, width, starty, startx);
     box(local_win, 0, 0);
