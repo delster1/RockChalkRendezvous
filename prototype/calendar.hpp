@@ -94,7 +94,6 @@ struct TimeBlock { // MARK: TimeBlock
         return Success;
     }
 
-    // Turning the TimeBlock into a string
     std::string to_string() const {
         std::ostringstream oss;
         oss << "\n" << this->name << ":\nStart: " << this->start.to_string() << "\nEnd: " << this->end.to_string() << "\n";
@@ -155,13 +154,10 @@ struct Calendar { // MARK: Calendar
 
     // Takes a time point and checks if it is included in the block's busy times
     bool is_time_block_busy(const TimeAndDate& timePoint) const {\
-        int ct = 0;
         for (const TimeBlock& block : busy_times) {
-            
             if (block.includes(timePoint)) {
                 return true;
             }
-            ct++;
         }
         return false;
     }
