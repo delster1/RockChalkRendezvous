@@ -66,6 +66,7 @@ static const char DAY_NAMES[7][10] = {
 
 // MARK: Functions
 
+// checks if given year is a leap year
 bool is_leap_year(i32 year) {
 	if (mod(year, 400) == 0) return true;
 	if (mod(year, 100) == 0) return false;
@@ -73,11 +74,13 @@ bool is_leap_year(i32 year) {
 	return false;
 }
 
+// returns the number of days in the given year
 u16 find_days_in_year(i32 year) {
 	if (is_leap_year(year)) return 366;
 	else return 365;
 }
 
+// returns the number of days in the given month
 u16 find_days_in_month(Month month, bool leap) {
 	switch (month) {
 		case January:
@@ -104,6 +107,7 @@ u16 find_days_in_month(Month month, bool leap) {
 	}
 }
 
+// returns the day of the year for the given month and day
 i32 find_day_of_year(Month month, i32 day_of_month, i32 year) {
 	bool leap = is_leap_year(year);
 	u16 days_this_month;
@@ -141,6 +145,7 @@ struct MonthAndDay {
 };
 
 
+// stores precise time and date information
 struct TimeAndDate { // MARK: TimeAndDate
 	private:
 	u16 minute;
@@ -151,8 +156,10 @@ struct TimeAndDate { // MARK: TimeAndDate
 	inline TimeAndDate(u16 minute, u16 day, i32 year) : minute(minute), day(day), year(year) {}
 	
 	public:
+    // default constructor
 	inline TimeAndDate() : minute(0), day(0), year(0) {}
 	
+    // builds a TimeAndDate object from a minute, day, and year
 	static TimeAndDate build(i32 minute, i32 day, i32 year) {
 		// extraneous minute values roll over to the day number
 		i32 extra_days = floor(static_cast<double>(minute) / MINUTES_IN_DAY);
@@ -185,6 +192,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 		return TimeAndDate::build_from_month_wrap_day(minute, day, month, year);
 	}
 	
+    // gets the current time and date
 	static TimeAndDate now() {
 		time_t system_time;
 		time(&system_time);
@@ -197,6 +205,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 		return output;
 	}
 	
+    // getters
 	inline u16 get_minute_of_day() const { return this->minute; }
 	inline u16 get_day_of_year() const { return this->day; }
 	inline u16 get_year() const { return this->year; }
@@ -204,6 +213,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 	inline u16 get_minute() const { return this->minute % 60; }
 	inline u16 get_hour() const { return this->minute / 60; }
 	
+    // MARK: Serialization methods
 	static inline std::string encode_static(const TimeAndDate& td) { return td.encode(); }
 	std::string encode() const {
 		let s = std::ostringstream();
@@ -313,6 +323,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 		return TimeAndDate::build_from_month_wrap_day(this->minute, md.day, md.month, this->year + years);
 	}
 	
+    // operator overloads
 	inline bool operator==(const TimeAndDate& other) const {
 		return this->year == other.year && this->day == other.day && this->minute == other.minute;
 	}
