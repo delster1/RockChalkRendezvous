@@ -48,7 +48,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
             wattroff(win, COLOR_PAIR(is_busy ? 1 : 2));
         }
     }
-
+ 
 
     wrefresh(win);
 }
