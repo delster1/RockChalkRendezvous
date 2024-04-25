@@ -53,6 +53,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
     wrefresh(win);
 }
 
+// draws the time block removal screen with the selected time block highlighted
 void draw_remove_calendar(WINDOW *win, Calendar& my_cal, int selected_index) {
     wclear(win);
     // const int days_of_week = 7;
