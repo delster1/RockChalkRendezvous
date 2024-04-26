@@ -36,7 +36,7 @@ enum Day {
 	Sunday    = 6,
 };
 
-static const char MONTH_NAMES[12][10] = {
+static const std::string MONTH_NAMES[12] = {
 	"January",
 	"February",
 	"March",
@@ -51,7 +51,7 @@ static const char MONTH_NAMES[12][10] = {
 	"December",
 };
 
-static const char DAY_NAMES[7][10] = {
+static const std::string DAY_NAMES[7] = {
 	"Monday",
 	"Tuesday",
 	"Wednesday",
@@ -59,6 +59,16 @@ static const char DAY_NAMES[7][10] = {
 	"Friday",
 	"Saturday",
 	"Sunday",
+};
+
+static const std::string DAY_ABBREVIATIONS[7] = {
+	"M",
+	"Tu",
+	"W",
+	"Th",
+	"F",
+	"Sa",
+	"Su",
 };
 
 
@@ -213,7 +223,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 	inline u16 get_minute() const { return this->minute % 60; }
 	inline u16 get_hour() const { return this->minute / 60; }
 	
-    // MARK: Serialization methods
+    // MARK: Serialize methods
 	static inline std::string encode_static(const TimeAndDate& td) { return td.encode(); }
 	std::string encode() const {
 		let s = std::ostringstream();
@@ -233,7 +243,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 	std::string to_string() const {
 		MonthAndDay md = this->get_month_and_day();
 		char s[64] = {0};
-		snprintf(s, 64, "%d:%02d %s, %s %d %d", this->get_hour(), this->get_minute(), DAY_NAMES[this->get_day_of_week()], MONTH_NAMES[md.month], md.day, this->year);
+		snprintf(s, 64, "%d:%02d %s, %s %d %d", this->get_hour(), this->get_minute(), DAY_NAMES[this->get_day_of_week()].c_str(), MONTH_NAMES[md.month].c_str(), md.day, this->year);
 		return std::string(s);
 	}
 	
@@ -280,6 +290,11 @@ struct TimeAndDate { // MARK: TimeAndDate
 		}
 		
 		return minute_diff;
+	}
+	
+	
+	TimeAndDate replace_time(const i32 minutes) const {
+		return TimeAndDate::build(minutes, this->day, this->year);
 	}
 	
 	// functions for adding time correctly
