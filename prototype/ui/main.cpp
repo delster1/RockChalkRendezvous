@@ -32,7 +32,7 @@ void draw_calendar(WINDOW *win, TimeAndDate start, Calendar my_cal, int scroll_o
 
     // loop through the time intervals and days of the week
     // prints busy times as # and free times as -
-    for (int minutes_interval = 0; minutes_interval < max_rows; ++minutes_interval) {
+    for (int minutes_interval = 0; minutes_interval < max_rows - 1; ++minutes_interval) {
         for (int day_of_week = 0; day_of_week < days_of_week; ++day_of_week) {
             int x = 5 + day_of_week * 20; // 20 spaces per column for spacing
             int time_of_day = (scroll_offset + minutes_interval) * 15; // Time in minutes from midnight
@@ -289,7 +289,6 @@ int main() {
             case 'k':
                 if (scroll_ct <= max_rows + 10){
                     scroll_ct++;
-                    // Scroll down
                     break;
                 }
                 break;
