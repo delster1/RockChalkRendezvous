@@ -64,12 +64,13 @@ struct TimeBlock { // MARK: TimeBlock
     static inline std::string encode_static(const TimeBlock& block) { return block.encode(); }
     std::string encode() const {
         std::ostringstream oss;
-        oss << this->start.encode() << " " << this->end.encode() << " " << static_cast<char>(this->repeat_period) << " " << this->repeat_count;
+        oss << quote_string(this->name) << " " << this->start.encode() << " " << this->end.encode() << " " << static_cast<char>(this->repeat_period) << " " << this->repeat_count;
         return oss.str();
     }
     
     static inline Status decode_static(std::istream& s, TimeBlock& block) { return block.decode(s); }
     Status decode(std::istream& s) {
+        propagate(read_quoted_string(s, this->name));
         propagate(this->start.decode(s));
         propagate(this->end.decode(s));
         
