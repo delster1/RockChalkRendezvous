@@ -2,33 +2,35 @@
 #include <iostream>
 #include <string>
 #include "httplib.h"
+#include "../networking.hpp"
 #include "../core_utils.hpp"
 
 #define CONFIG_FILE_NAME "config.txt"
 #define DEFAULT_SERVER_HOSTNAME "localhost"
 #define DEFAULT_SERVER_PORT 8080
 
-std::string quote_string(const std::string& input) {
-    return "\"" + input + "\"";
-}
 
-Status send_login_request(const std::string& hostname, int port, const std::string& username, const std::string& password) {
+Status send_login_request(httplib::Client client, const std::string& username, const std::string& password) {
     // Quote the username and password to ensure they are transmitted in a format the server expects.
-    std::string quoted_username = quote_string(username);
-    std::string quoted_password = quote_string(password);
 
     // Prepare the body of the POST request
-    std::string body = quoted_username + "\n" + quoted_password;
+    std::string body = quote_string(username) + "\n" + quote_string(password);
 
-    httplib::Client cli(hostname.c_str(), port);
     // Make a POST request
-    auto res = cli.Post("/validate_account", body, "text/plain");
+    auto res = client.Post("/validate_account", body, "text/plain");
 
     // Check the response
-    if (res && res->status == 'K') { // Assuming 200 is the HTTP OK status
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
         std::cout << "Status: " << res->status << std::endl;
         std::cout << "Body: " << res->body << std::endl;
         return Success; // Or convert server response to appropriate status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
     } else {
         if (res) {
             std::cout << "HTTP Error: " << res->status << std::endl;
@@ -38,21 +40,27 @@ Status send_login_request(const std::string& hostname, int port, const std::stri
         return Failure;
     }
 }
+// cached info in static variables - at top of file, can be referenced outside 
+Status send_create_account_request(httplib::Client client, const std::string& username, const std::string& password) {
 
-Status send_create_account_request(const std::string& hostname, int port, const std::string& username, const std::string& password) {
-	std::string quoted_username = quote_string(username);
-    std::string quoted_password = quote_string(password);
 
     // Prepare the body of the POST request
-    std::string body = quoted_username + "\n" + quoted_password;
+    std::string body = quote_string(username) + "\n" + quote_string(password);
 
-    httplib::Client cli(hostname.c_str(), port);
+    
     // Make a POST request
-    auto res = cli.Post("/create_account", body, "text/plain");
-	if (res && res->status == 'K') { // Assuming 200 is the HTTP OK status
+    auto res = client.Post("/create_account", body, "text/plain");
+	if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
         std::cout << "Status: " << res->status << std::endl;
         std::cout << "Body: " << res->body << std::endl;
-        return Success; // Or convert server response to appropriate status
+		
+		let response_stream = std::istringstream(res-> body);
+		char response_code;
+		response_stream >> response_code;
+		if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+            return Success; 
+		}
     } else {
         if (res) {
             std::cout << "HTTP Error: " << res->status << std::endl;
@@ -62,7 +70,7 @@ Status send_create_account_request(const std::string& hostname, int port, const 
         return Failure;
     }
 }
-	
+	// For decoding groups to vector, use decoxde_vector<Group>
 
 
 int main() {
@@ -88,7 +96,7 @@ int main() {
     // Always rewrite the config to ensure it's up to date or create if it does not exist
     std::ofstream output_config(CONFIG_FILE_NAME);
     if (output_config.is_open()) {
-        output_config << quote_string(hostname) << "\n" << port;
+        output_config << hostname << "\n" << port;
         output_config.close(); // Properly close the file
     } else {
         std::cerr << "Failed to open config file for writing.\n";
@@ -96,5 +104,10 @@ int main() {
 
     // Continue with your application logic
     std::cout << "Configured to connect to " << hostname << " on port " << port << std::endl;
+    
+    httplib::Client my_client(hostname.c_str(), port); // initialize httplib client for sending and making requests
+    send_create_account_request(std::move(my_client), "d3", "password");
     return 0;
+
+
 }
