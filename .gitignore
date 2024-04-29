@@ -4,6 +4,7 @@
 
 prototype/server/groups.txt
 prototype/server/users
+prototype/server/server
 prototype/server/config.txt
 prototype/client/config.txt
 prototype/calendar/main

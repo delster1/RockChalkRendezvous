@@ -78,14 +78,20 @@ ServerResponse create_account(std::istream& message) {
 	// InvalidPassword unused otherwise
 	
     // creates a new user file with username/password
-	(std::ofstream(USER_FOLDER_PATH(username)) << User(username, password).encode()).close();
+	// (std::ofstream(USER_FOLDER_PATH(username)) << User(username, password).encode()).close();
+    auto user_file = std::ofstream(USER_FOLDER_PATH(username));
+    user_file << User(username, password).encode();
+    user_file.close();
 	
 	return AccountOk;
 }
 
 inline void save_user_file(const User& user) {
     // saves entire user data to file
-	(std::ofstream(USER_FOLDER_PATH(user.username)) << user.encode()).close();
+	// (std::ofstream(USER_FOLDER_PATH(user.username)) << user.encode()).close();
+    auto user_file = std::ofstream(USER_FOLDER_PATH(user.username));
+    user_file << user.encode();
+    user_file.close();
 }
 
 
@@ -431,12 +437,18 @@ int main() {
 		if (config_file.fail()) {
 			printf("Couldn't read port from config file, resetting it to default.\n");
 			port = DEFAULT_SERVER_PORT;
-			(std::ofstream(CONFIG_FILE_NAME) << port).close();
+			// (std::ofstream(CONFIG_FILE_NAME) << port).close();
+            auto config_file = std::ofstream(CONFIG_FILE_NAME);
+            config_file << port;
+            config_file.close();
 		}
 	} else {
 		printf("Config file not found, creating a new one.\n");
 		port = DEFAULT_SERVER_PORT;
-		(std::ofstream(CONFIG_FILE_NAME) << port).close();
+		// (std::ofstream(CONFIG_FILE_NAME) << port).close();
+        auto config_file = std::ofstream(CONFIG_FILE_NAME);
+        config_file << port;
+        config_file.close();
 	}
 	
 	
