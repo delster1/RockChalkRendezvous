@@ -2,7 +2,7 @@ CC := g++
 TARGET := ui.exe
 FLAGS := -std=c++17 -I../../lib/cpp-httplib -I"../../lib/ncurses/include" -I"../../lib/ncurses/include/ncursesw"
 LDLIBS := -L"../../lib/ncurses/lib" -lcurses -DNCURSES_STATIC
-SOURCES := main.cpp
+SOURCES := login.cpp
 
 build: $(SOURCES)
 	$(CC) $(FLAGS) $(SOURCES) -o $(TARGET) $(LDLIBS)

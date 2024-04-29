@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+
+void prompt_username(WINDOW* window, char* username);
+void prompt_password(WINDOW* window, char* password);
+
 enum MenuOption {
     // SUCCESS,
     // FAILURE, MIGHT USE THESE FOR LOGIN/REGISTRATION SUCCESS/FAILURE
@@ -108,16 +112,15 @@ MenuOption draw_account_choice_window(WINDOW* win) {
 Status draw_account_auth_window(WINDOW* login_window,MenuOption result,char* username,char* password) {
     wclear(login_window);
 
-    mvwprintw(login_window, 1, 0, "Trying to authorize your account")
+    mvwprintw(login_window, 1, 0, "Trying to authorize your account");
     switch (result) {
         case LOGIN:
-            std::string username;
-            std::string password;
+
 
             prompt_username(login_window, username);
             prompt_password(login_window, password);
 
-            another_function(iss);
+            // another_function(iss);
             break;
     }
     return Failure;
@@ -180,7 +183,7 @@ int main() {
             }
             break;
     }
-    status authorization = draw_account_auth_window(login_window, result, username, password);
+    Status authorization = draw_account_auth_window(login_window, result, username, password);
     
  
     noecho();
