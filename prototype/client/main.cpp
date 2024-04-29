@@ -70,7 +70,6 @@ Status send_create_account_request(httplib::Client client, const std::string& us
         return Failure;
     }
 }
-	// For decoding groups to vector, use decoxde_vector<Group>
 
 
 int main() {
