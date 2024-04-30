@@ -207,9 +207,11 @@ void draw_calendar_week() {
 
 
 void draw_event_list() {
+    const int margin = 20;
+    
     wattron(calendar_window, COLOR_PAIR(2));
-    mvwprintw(calendar_window, 1, 40, "Name");
-    mvwprintw(calendar_window, 1, calendar_window_width - 40 - 88, "12:00 Wednesday, September 29 2003       122 hours, 15 minutes       99999 times Monthly");
+    mvwprintw(calendar_window, 1, margin, "Name");
+    mvwprintw(calendar_window, 1, calendar_window_width - margin - 88, "12:00 Wednesday, September 29 2003       122 hours, 15 minutes       99999 times Monthly");
     wattroff(calendar_window, COLOR_PAIR(2));
     
     for (i32 row = 2; row - 2 + list_scroll_offset < calendar.busy_times.size(); row++) {
@@ -229,18 +231,18 @@ void draw_event_list() {
         if (row - 2 + list_scroll_offset == list_selected_index) color_id += 8;
         
         wattron(calendar_window, COLOR_PAIR(color_id));
-        mvwprintw(calendar_window, row, 40, "%s", block.name.c_str());
-        mvwprintw(calendar_window, row, calendar_window_width - 40 - 88, "%s", block.start.to_string().c_str());
-        mvwprintw(calendar_window, row, calendar_window_width - 40 - 47, "%s", duration_string.c_str());
-        mvwprintw(calendar_window, row, calendar_window_width - 40 - 19, "%s", repeat_string.c_str());
+        mvwprintw(calendar_window, row, margin, "%s", block.name.c_str());
+        mvwprintw(calendar_window, row, calendar_window_width - margin - 88, "%s", block.start.to_string().c_str());
+        mvwprintw(calendar_window, row, calendar_window_width - margin - 47, "%s", duration_string.c_str());
+        mvwprintw(calendar_window, row, calendar_window_width - margin - 19, "%s", repeat_string.c_str());
         wattroff(calendar_window, COLOR_PAIR(color_id));
     }
     
     i32 selected_row_draw = list_selected_index - list_scroll_offset + 2;
     if (selected_row_draw >= 2 && selected_row_draw < calendar_window_height) {
         wattron(calendar_window, COLOR_PAIR(10));
-        mvwprintw(calendar_window, selected_row_draw, 40 - 2, ">");
-        mvwprintw(calendar_window, selected_row_draw, calendar_window_width - (40 - 2), "<");
+        mvwprintw(calendar_window, selected_row_draw, margin - 2, ">");
+        mvwprintw(calendar_window, selected_row_draw, calendar_window_width - (margin - 2), "<");
         wattroff(calendar_window, COLOR_PAIR(10));
     }
 }
@@ -635,7 +637,7 @@ int main() {
                         redraw = true; break;
                     case AddingRepeatCount:
                         // todo read new block name
-                        calendar.busy_times.push_back(TimeBlock("", new_start_time, new_end_time, new_repeat_type, new_repeat_count));
+                        calendar.busy_times.push_back(TimeBlock("New Block", new_start_time, new_end_time, new_repeat_type, new_repeat_count));
                         ui_state = ViewingCalendar;
                         redraw = true; break;
                     case RemoveConfirm:

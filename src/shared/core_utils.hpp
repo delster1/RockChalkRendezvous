@@ -20,8 +20,8 @@
 
 
 // Find a true modulo since % is actually remainder
-inline u32 mod(i32 a, u32 b) {
-	return ((a % b) + b) % b;
+inline i32 mod(i32 a, u32 b) {
+	return ((a % (i32)b) + (i32)b) % (i32)b;
 }
 
 

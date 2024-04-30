@@ -203,9 +203,10 @@ struct TimeAndDate { // MARK: TimeAndDate
 	
 	// September 31 -> September 30
 	inline static TimeAndDate build_from_month(i32 minute, i32 day, i32 month, i32 year) {
-		u16 days_this_month = find_days_in_month(static_cast<Month>(mod(month, 12)), is_leap_year(year));
+		year += (month - mod(month, 12)) / 12;
+		u16 days_this_month = find_days_in_month(static_cast<Month>(mod(month, 12)), year);
 		if (day > days_this_month) day = days_this_month;
-		return TimeAndDate::build_from_month_wrap_day(minute, day, month, year);
+		return TimeAndDate::build_from_month_wrap_day(minute, day, mod(month, 12), year);
 	}
 	
     // gets the current time and date
