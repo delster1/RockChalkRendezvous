@@ -146,10 +146,7 @@ void draw_block(const TimeAndDate& display_start, const TimeAndDate& display_end
 }
 
 
-
-void draw_calendar_week() {
-    bool render_select = ui_state == ViewingCalendar || ui_state == AddingStart || ui_state == AddingEnd;
-    
+void draw_calendar_frame(const bool render_select) {
     wattron(calendar_window, COLOR_PAIR(2));
     mvwprintw(calendar_window, 1, 0, pad_center(std::to_string(calendar_start_day.get_year()), 6).c_str());
     
@@ -189,6 +186,13 @@ void draw_calendar_week() {
         mvwprintw(calendar_window, selected_row_draw, selected_x + calendar_day_width, "<");
         wattroff(calendar_window, COLOR_PAIR(10));
     }
+}
+
+
+void draw_calendar_week() {
+    bool render_select = ui_state == ViewingCalendar || ui_state == AddingStart || ui_state == AddingEnd;
+    
+    draw_calendar_frame(render_select);
     
     TimeAndDate end_day = calendar_start_day.add_days(7);
     
@@ -205,7 +209,59 @@ void draw_calendar_week() {
 }
 
 
+u32 get_group_color_map(const u32 count) {
+    const u32 max = group_calendars.size();
+    
+    if (count == max) return 3; // Green
+    else if (count >= max * 4/5) return 5; // Yellow
+    else if (count >= max * 1/2) return 7; // Red
+    else return 1; // White
+}
+
+
 void draw_group_calendar_week() {
+    draw_calendar_frame(true);
+    
+    TimeAndDate end_day = calendar_start_day.add_days(7);
+    
+    u32 counts[7][96] = {{ 0 }};
+    
+    for (const auto& pair : group_calendars) {
+        const std::string& user_name = std::get<0>(pair);
+        const Calendar& user_calendar = std::get<1>(pair);
+        
+        for (const TimeBlock& block : user_calendar.busy_times) {
+            std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> occurrences = render_block(block, calendar_start_day, end_day);
+            for (auto occurrence : occurrences) {
+                TimeAndDate display_start = std::get<1>(occurrence);
+                TimeAndDate display_end = std::get<2>(occurrence);
+                
+                u32 start_day_of_week = display_start.get_day_of_week();
+                u32 end_day_of_week = display_end.add_minutes(-1).get_day_of_week();
+                for (u32 day_of_week = display_start.get_day_of_week(); day_of_week <= end_day_of_week; day_of_week++) {
+                    i32 start_row = 0;
+                    i32 end_row = calendar_scroll_height - 1;
+                    if (day_of_week == start_day_of_week) start_row = display_start.get_minute_of_day() / calendar_row_size;
+                    if (day_of_week == end_day_of_week) end_row = display_end.add_minutes(-1).get_minute_of_day() / calendar_row_size;
+                    
+                    for (u32 row = start_row; row <= end_row; row++) {
+                        counts[day_of_week][row] += 1;
+                    }
+                }
+            }
+        }
+    }
+    
+    for (u32 day_of_week = 0; day_of_week < 7; day_of_week++) {
+        u32 x = calendar_time_margin + 1 + day_of_week * (calendar_day_width + 1);
+        for (u32 row = 2; row < calendar_window_height; row++) {
+            u32 color_id = get_group_color_map(counts[day_of_week][row + calendar_scroll_offset - 2]);
+            if (color_id < 8 && (row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week)) color_id += 8;
+            wattron(calendar_window, COLOR_PAIR(color_id));
+            mvwprintw(calendar_window, row, x, "%s", std::string(calendar_day_width, '#').c_str());
+            wattroff(calendar_window, COLOR_PAIR(color_id));
+        }
+    }
     
 }
 
@@ -325,8 +381,25 @@ void draw_adding_repeat_count_interaction() {
 void draw_group_calendar_interaction() {
     mvwprintw(interact_window, 1, 3, "Group calendar for %s", active_group_name.c_str());
     
-    mvwprintw(interact_window, 2, 3, "Under construction");
+    u32 max = group_calendars.size();
+    u32 space = 8;
+    wattron(calendar_window, COLOR_PAIR(3));
+    mvwprintw(interact_window, 3, 8, "All %d Available", max);
+    wattroff(calendar_window, COLOR_PAIR(3));
+    wattron(calendar_window, COLOR_PAIR(5));
+    mvwprintw(interact_window, 3, 24 + space, "%d to %d Available", max - 1, max * 4/5);
+    wattroff(calendar_window, COLOR_PAIR(5));
+    wattron(calendar_window, COLOR_PAIR(7));
+    mvwprintw(interact_window, 3, 42 + 2*space, "%d to %d Available", max * 4/5 - 1, max * 1/2);
+    wattroff(calendar_window, COLOR_PAIR(7));
+    wattron(calendar_window, COLOR_PAIR(1));
+    mvwprintw(interact_window, 3, 60 + 3*space, "Fewer than %d Available", max * 1/2 - 1);
+    wattroff(calendar_window, COLOR_PAIR(1));
     
+    mvwprintw(interact_window, 5, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 6, 3, "A/D: Scroll Left / Right");
+    mvwprintw(interact_window, 7, 3, "Arrow Keys: Move Selection Cursor");
+    mvwprintw(interact_window, 8, 3, "Q: Exit");
 }
 
 
