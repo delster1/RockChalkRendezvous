@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include "client.cpp"
+#include "httplib.h"
 
 
 enum MenuOption {

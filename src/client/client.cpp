@@ -3,8 +3,8 @@
 #include <string>
 #include "httplib.h"
 #include <iostream>
-#include "../../prototype/networking.hpp"
-#include "../../prototype/core_utils.hpp"
+#include "../../prototype/networking_proto.hpp"
+#include "../../prototype/core_utils_proto.hpp"
 #define CONFIG_FILE_NAME "config.txt"
 #define DEFAULT_SERVER_HOSTNAME "localhost"
 #define DEFAULT_SERVER_PORT 8080
@@ -46,7 +46,6 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
     }
 }
 Status send_create_account_request(httplib::Client* client, const std::string& username_string, const std::string& password_string) {
-
 
     // Prepare the body of the POST request
     std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
