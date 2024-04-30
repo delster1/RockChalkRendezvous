@@ -58,7 +58,6 @@ LoginResult login(std::istream& message) {
 }
 
 
-
 ServerResponse create_account(std::istream& message) {
 	std::string username, password;
 	if (read_quoted_string(message, username) == Failure) return BadData;
@@ -93,7 +92,6 @@ inline void save_user_file(const User& user) {
     user_file << user.encode();
     user_file.close();
 }
-
 
 // Does not save the user's file after removing the group entry
 // Fails if the user already has no affiliation with the group

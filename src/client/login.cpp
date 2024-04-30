@@ -6,26 +6,30 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include "client.cpp"
+#include "httplib.h"
 
 
 enum MenuOption {
-    // SUCCESS,
-    // FAILURE, MIGHT USE THESE FOR LOGIN/REGISTRATION SUCCESS/FAILURE
-    LOGIN,
-    REGISTER,
-    FAILURE,
-    EXIT // Optional, if you have an exit option
+    LoggingIn,
+    Registering,
+    Unauthorized,
+    Authorized,
+    FailureToAuthorize, // Optional, if you have an exit option
 };
-
-void prompt_username(WINDOW* window, char* username);
-void prompt_password(WINDOW* window, char* password);
-void get_username_and_password(WINDOW* window, MenuOption result, char* username, char* passwd);
-void draw_login_window(WINDOW* win);
+static char username[50];
+static char password[50];
+static WINDOW* login_window;
+static MenuOption MenuState;
+void prompt_username();
+void prompt_password();
+void get_username_and_password();
+void draw_login_window();
 // MenuOption attempt_login(const char* username, const char* password) {
 //     if (/* login successful */) {
 //         return SUCCESS;
 //     } else {
-//         return FAILURE;
+//         return Failure;
 //     }
 // }
 
@@ -34,7 +38,7 @@ void draw_login_window(WINDOW* win);
 //     if (/* registration successful */) {
 //         return SUCCESS;
 //     } else {
-//         return FAILURE;
+//         return Failure;
 //     }
 // }
 
@@ -53,45 +57,48 @@ void destroy_window(WINDOW* local_win) {
     delwin(local_win);
 }
 
-void draw_register_window(WINDOW* win){
-    mvwprintw(win, 1, 1, "Create to your account:");
-    mvwprintw(win, 2, 1, "\tUsername:");
-    mvwprintw(win, 4, 1, "\tPassword:");
-    mvwprintw(win, 6, 1, "\tConfirm Password:");
+void draw_register_window(){
+    wrefresh(login_window);
+    mvwprintw(login_window, 1, 1, "Create to your account:");
+    mvwprintw(login_window, 2, 1, "\tUsername:");
+    mvwprintw(login_window, 4, 1, "\tPassword:");
+    mvwprintw(login_window, 6, 1, "\tConfirm Password:");
 
-    wrefresh(win);  // Refresh the window to show the text
+    wrefresh(login_window);  // Refresh the window to show the text
 }
 
-void draw_login_window(WINDOW* win) {
-    mvwprintw(win, 1, 1, "Login to your account:");
-    mvwprintw(win, 2, 1, "\tUsername:");
-    mvwprintw(win, 4, 1, "\tPassword:");
-    wrefresh(win);  // Refresh the window to show the text
+void draw_login_window() {
+    wrefresh(login_window);
+    mvwprintw(login_window, 1, 1, "Login to your account:");
+    mvwprintw(login_window, 2, 1, "\tUsername:");
+    mvwprintw(login_window, 4, 1, "\tPassword:");
+    wrefresh(login_window);  // Refresh the window to show the text
 }
 // Draws the login/registration window and handles user selection
-MenuOption draw_account_choice_window(WINDOW* win) {
+MenuOption draw_account_choice_window() {
+    wrefresh(login_window);
     int current_selection = 0;
     int ch;
     const char *choices[] = { "Login", "Register" };
     const int num_choices = sizeof(choices) / sizeof(choices[0]);
 
-    keypad(win, TRUE); // Enable keyboard input for the window
-    noecho();          // Don't echo the pressed keys to the window
-    mvwprintw(win, 0, 0, "Choose to either login or register for an account");
+    keypad(login_window, TRUE); // Enable keyboard input for the login_windowdow
+    noecho();          // Don't echo the pressed keys to the login_windowdow
+    mvwprintw(login_window, 0, 0, "Choose to either login or register for an account");
     
     while (true) {
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
-                wattron(win, A_REVERSE);  // Highlight the selected choice
+                wattron(login_window, A_REVERSE);  // Highlight the selected choice
             }
-            mvwprintw(win, i + 1, 1, "%s", choices[i]);
+            mvwprintw(login_window, i + 1, 1, "%s", choices[i]);
             if (i == current_selection) {
-                wattroff(win, A_REVERSE);
+                wattroff(login_window, A_REVERSE);
             }
         }
-        wrefresh(win);
+        wrefresh(login_window);
 
-        ch = wgetch(win); // Get user input
+        ch = wgetch(login_window); // Get user input
 
         switch (ch) {
             case KEY_UP:
@@ -112,66 +119,98 @@ MenuOption draw_account_choice_window(WINDOW* win) {
     }
 }
 
-Status draw_account_auth_window(WINDOW* login_window,MenuOption result,char* username,char* password) {
+Status draw_account_auth_window() {
     wclear(login_window);
-
-    mvwprintw(login_window, 1, 0, "Trying to authorize your account");
-    switch (result) {
-        case LOGIN:
+    httplib::Client* my_client = build_client();
+    Status authorization_result = Failure;
+    mvwprintw(login_window, 9, 0, "Trying to authorize your account");
+    switch (MenuState) {
+        case LoggingIn:
             // THis is where I'll send login requests
-
             // another_function(iss);
+            authorization_result = send_login_request(my_client, username, password);
+            
             break;
-        case REGISTER:
+        case Registering:
             // This is where I'll send register requests 
+            authorization_result = send_create_account_request(my_client, username, password);
             break;
-        case FAILURE:
-            wclear(login_window);
-    }   
-    return Failure;
-}
-void prompt_username(WINDOW* window, char* username) {
-    echo();
-    wmove(window, 2, 19);
-    wgetnstr(window, username, 22);  
-}
-
-void prompt_password(WINDOW* window, char* password) {
-    echo();
-    wmove(window, 4, 19);
-    wgetnstr(window, password, 22);  
-}
-
-void prompt_confirm_password(WINDOW* window, char* password) {
-    echo();
-    wmove(window, 6, 29);
-    wgetnstr(window, password, 22);  
-}
-
-void get_username_and_password(WINDOW* window,MenuOption result, char* username, char* password){
-    char confirm_password[22];
-    switch (result) {
-        // Handle LOGIN and REGISTER if they're still relevant here
-        case LOGIN:
-            draw_login_window(window);
-            prompt_username(window, username);
-            prompt_password(window, password);
+    }
+    switch (authorization_result){
+        case Success:
+            MenuState = Authorized;
             break;
-        case REGISTER:
-            draw_register_window(window);
-            prompt_username(window, username);
-            prompt_password(window, password);
-            prompt_confirm_password(window, confirm_password);
+        case Failure:
+            MenuState = FailureToAuthorize;
+            break;
+    }
+    wclear(login_window);
+    return authorization_result;
+}
+void prompt_username() {
+    echo();
+    wmove(login_window, 2, 19);
+    wgetnstr(login_window, username, 22);  
+}
+
+void prompt_password() {
+    echo();
+    wmove(login_window, 4, 19);
+    wgetnstr(login_window, password, 22);  
+}
+
+void prompt_confirm_password(char* confirm_password) {
+    echo();
+    wmove(login_window, 6, 29);
+    wgetnstr(login_window, confirm_password, 22);  
+}
+
+void get_username_and_password(){
+    wrefresh(login_window);
+    char confirm_password[50];
+    switch (MenuState) {
+        // Handle Login and Register if they're still relevant here
+        case LoggingIn:
+            draw_login_window();
+            prompt_username();
+            prompt_password();
+            break;
+        case Registering:
+            draw_register_window();
+            prompt_username();
+            prompt_password();
+            prompt_confirm_password(confirm_password);
             if( strcmp(password,confirm_password) == 0) { // also handle account creation here
-                mvwprintw(window, 10, 0, "Creating Account...");
+                mvwprintw(login_window, 9, 0, "Creating Account...");
             }else{
-                mvwprintw(window, 10, 0, "Passwords Don't Match!");
-                wclear(window);
-
-                get_username_and_password(window, result, username, password);
+                mvwprintw(login_window, 9, 0, "Passwords Don't Match!");
+                get_username_and_password(); // calls back to function when passwords dont match
             }
             break;
     }
+}
+
+void update_screen() {
+    switch (MenuState) {
+        case Unauthorized:
+            MenuState = draw_account_choice_window();
+            break;
+        case LoggingIn:
+        case Registering:
+            get_username_and_password();
+            draw_account_auth_window();
+            break;
+        case Authorized:
+            mvwprintw(login_window, 9, 1, "SUCCESSFULLY AUTHORIZED!");
+            wrefresh(login_window);
+            break;
+        case FailureToAuthorize:
+            mvwprintw(login_window, 9, 1,  "FAILED TO AUTHORIZE!");
+            MenuState = MenuOption::Unauthorized;
+            wrefresh(login_window);
+            break;
+    }
+    wrefresh(login_window); // Make sure to refresh after updates
 }
 
 int main() {
@@ -181,29 +220,19 @@ int main() {
     start_color();
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_WHITE, COLOR_BLACK);
-    
-    int login_height = LINES / 4;
-    int login_width = COLS / 4;
-    int start_row = (LINES - login_height) / 2;
-    int start_col = (COLS - login_width) / 2;
-    WINDOW* login_window = create_window(login_height, login_width, start_row, start_col);
-    char username[22];
-    char password[22];
-    
-    echo();
 
-    MenuOption result = draw_account_choice_window(login_window);
-    get_username_and_password(login_window, result, username, password);
-    // take user input for username and password
-    Status authorization = draw_account_auth_window(login_window, result, username, password);
+    login_window = create_window(LINES / 4, COLS / 2, LINES / 4, COLS / 4);
     
- 
-    noecho();
-    wrefresh(login_window);
-    // main character controls
+    // Ensure the window is clear at start
+    wclear(login_window);
+    mvwprintw(login_window, 1, 1, "TEST"); // Initial message
+    wrefresh(login_window); // Refresh to show initial state
+
+    MenuState = MenuOption::Unauthorized; // Start state
+
     int character;
-    while ((character = wgetch(login_window)) != 'q') { // Loop until q is pressed
-        wrefresh(login_window);
+    while (true) { // Loop until 'q' is pressed
+        update_screen();
     }
 
     destroy_window(login_window);
