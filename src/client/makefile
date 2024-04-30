@@ -5,7 +5,7 @@ LINUX_LDLIBS := -lncursesw -pthread
 WIN_LDLIBS := -lssp -L"../../lib/ncurses/lib" -lncursesw -DNCURSES_STATIC
 SOURCES := login.cpp
 
-ifeq ($(shell echo "check_quotes"),"check_quotes")
+ifeq ($(OS),Windows_NT)
     WINDOWS := yes
 else
     WINDOWS := no
