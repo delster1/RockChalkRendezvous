@@ -123,6 +123,7 @@ Status draw_account_auth_window() {
     wclear(login_window);
     mvwprintw(login_window, 7, 0, "Trying to authorize your account");
     wrefresh(login_window);
+    napms(1000);
     httplib::Client* my_client = build_client();
     Status authorization_result = Failure;
     switch (MenuState) {
@@ -188,8 +189,10 @@ void get_username_and_password(){
                 mvwprintw(login_window, 9, 0, "Creating Account...");
             }else{
                 mvwprintw(login_window, 9, 0, "Passwords Don't Match!");
+                wrefresh(login_window);
+                napms(2000);
                 wclear(login_window);
-                get_username_and_password(); // calls back to function when passwords dont match
+                MenuState = MenuOption::Unauthorized; // calls back to function when passwords dont match
             }
             napms(1000);
             break;

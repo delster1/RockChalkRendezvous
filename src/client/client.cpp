@@ -27,8 +27,8 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
 
     // Check the response
     if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
-        std::cout << "Status: " << res->status << std::endl;
-        std::cout << "Body: " << res->body << std::endl;
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
         let response_stream = std::istringstream(res -> body);
         char response_code;
         response_stream >> response_code;
@@ -38,9 +38,9 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
 		}
     } else {
         if (res) {
-            std::cout << "HTTP Error: " << res->status << std::endl;
+            // std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
-            std::cout << "Network Error: " << res.error() << std::endl;
+            // std::cout << "Network Error: " << res.error() << std::endl;
         }
     }
     return Failure;
@@ -55,8 +55,8 @@ Status send_create_account_request(httplib::Client* client, const std::string& u
     // Make a POST request
     auto res = client->Post("/create_account", body, "text/plain");
 	if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
-        std::cout << "Status: " << res->status << std::endl;
-        std::cout << "Body: " << res->body << std::endl;
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
 		
 		let response_stream = std::istringstream(res-> body);
 		char response_code;
@@ -71,8 +71,9 @@ Status send_create_account_request(httplib::Client* client, const std::string& u
         } else {
             std::cout << "Network Error: " << res.error() << std::endl;
         }
-        return Failure;
     }
+    return Failure;
+
 }
 	// For decoding groups to vector, use decoxde_vector<Group>
 
