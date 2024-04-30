@@ -14,8 +14,15 @@ enum MenuOption {
     LoggingIn,
     Registering,
     Unauthorized,
-    Authorized,
+    Authorized, // this will eventually be an "in menu" state, meaning the user is viewing possible menus
     FailureToAuthorize, // Optional, if you have an exit option
+    ViewingCalendar,
+    ViewingList,
+    AddingStart,
+    AddingEnd,
+    AddingRepeatType,
+    AddingRepeatCount,
+    RemoveConfirm,
 };
 static char username[50];
 static char password[50];
