@@ -1,4 +1,4 @@
-ifeq ($(shell echo "check_quotes"),"check_quotes")
+ifeq ($(OS),Windows_NT)
     WINDOWS := yes
 else
     WINDOWS := no
