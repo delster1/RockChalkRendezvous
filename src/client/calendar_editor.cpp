@@ -8,6 +8,7 @@
 
 #include "../../src/shared/timeanddate.hpp"
 #include "../../src/shared/calendar.hpp"
+#include "calendar_editor.hpp"
 
 
 enum UIState {
@@ -18,6 +19,7 @@ enum UIState {
     AddingRepeatType,
     AddingRepeatCount,
     RemoveConfirm,
+    GroupCalendar,
 };
 
 
@@ -34,9 +36,7 @@ static WINDOW* interact_window;
 static u32 calendar_time_margin = 5;
 static u32 calendar_day_width;
 
-static Calendar calendar;
-
-static UIState ui_state = ViewingCalendar;
+static UIState ui_state;
 
 static u32 calendar_row_size = 15;
 static u32 calendar_scroll_height = MINUTES_IN_DAY / calendar_row_size;
@@ -205,6 +205,11 @@ void draw_calendar_week() {
 }
 
 
+void draw_group_calendar_week() {
+    
+}
+
+
 void draw_event_list() {
     const int margin = 20;
     
@@ -317,6 +322,13 @@ void draw_adding_repeat_count_interaction() {
     mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
 }
 
+void draw_group_calendar_interaction() {
+    mvwprintw(interact_window, 1, 3, "Group calendar for %s", active_group_name.c_str());
+    
+    mvwprintw(interact_window, 2, 3, "Under construction");
+    
+}
+
 
 
 
@@ -423,8 +435,7 @@ void on_resize() {
 }
 
 
-
-void transfer_to_calendar_editor() {
+void initialize_window() {
     //initscr();
     noecho();
     cbreak();
@@ -461,39 +472,10 @@ void transfer_to_calendar_editor() {
     calendar_scroll_offset = calendar_selected_row - 4;
     
     calendar_start_day = now.replace_time(0).add_days(-static_cast<int>(now.get_day_of_week()));
-    
-    calendar.busy_times.push_back(TimeBlock(
-        "Morning event",
-        now.replace_time(1 * 60),
-        now.replace_time(4 * 60),
-        RepeatType::NoRepeat,
-        0
-    ));
-    
-    calendar.busy_times.push_back(TimeBlock(
-        "Afternoon event",
-        now.replace_time(12 * 60),
-        now.replace_time(15 * 60),
-        RepeatType::Weekly,
-        12
-    ));
-    
-    calendar.busy_times.push_back(TimeBlock(
-        "Daily event",
-        now.replace_time(18 * 60),
-        now.replace_time(19 * 60),
-        RepeatType::Daily,
-        30
-    ));
-    
-    calendar.busy_times.push_back(TimeBlock(
-        "Monthly event",
-        now.add_days(2),
-        now.add_days(2).add_minutes(90),
-        RepeatType::Monthly,
-        30
-    ));
-    
+}
+
+
+void editor_main_loop() {
     
     bool redraw = true;
     
@@ -612,6 +594,7 @@ void transfer_to_calendar_editor() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
+                    case GroupCalendar:
                         calendar_scroll_offset -= 1;
                         redraw = true; break;
                     case ViewingList:
@@ -630,6 +613,7 @@ void transfer_to_calendar_editor() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
+                    case GroupCalendar:
                         calendar_scroll_offset += 1;
                         redraw = true; break;
                     case ViewingList:
@@ -642,6 +626,7 @@ void transfer_to_calendar_editor() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
+                    case GroupCalendar:
                         calendar_start_day = calendar_start_day.add_days(-7);
                         redraw = true; break;
                 } break;
@@ -651,6 +636,7 @@ void transfer_to_calendar_editor() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
+                    case GroupCalendar:
                         calendar_start_day = calendar_start_day.add_days(7);
                         redraw = true; break;
                     case AddingRepeatType:
@@ -664,6 +650,7 @@ void transfer_to_calendar_editor() {
                     case ViewingCalendar:
                     case AddingStart:
                     case AddingEnd:
+                    case GroupCalendar:
                         calendar_selected_row -= 1;
                         if (calendar_scroll_offset > calendar_selected_row) {
                             calendar_scroll_offset = calendar_selected_row;
@@ -685,6 +672,7 @@ void transfer_to_calendar_editor() {
                     case ViewingCalendar:
                     case AddingStart:
                     case AddingEnd:
+                    case GroupCalendar:
                         calendar_selected_row += 1;
                         if (calendar_scroll_offset > calendar_selected_row) {
                             calendar_scroll_offset = calendar_selected_row;
@@ -706,6 +694,7 @@ void transfer_to_calendar_editor() {
                     case ViewingCalendar:
                     case AddingStart:
                     case AddingEnd:
+                    case GroupCalendar:
                         calendar_selected_day_of_week -= 1;
                         redraw = true; break;
                     case AddingRepeatCount:
@@ -719,6 +708,7 @@ void transfer_to_calendar_editor() {
                     case ViewingCalendar:
                     case AddingStart:
                     case AddingEnd:
+                    case GroupCalendar:
                         calendar_selected_day_of_week += 1;
                         redraw = true; break;
                     case AddingRepeatCount:
@@ -811,6 +801,9 @@ void transfer_to_calendar_editor() {
                 draw_event_list();
                 draw_remove_confirm_interaction();
                 break;
+            case GroupCalendar:
+                draw_group_calendar_week();
+                draw_group_calendar_interaction();
         }
         
         wrefresh(calendar_window);
@@ -825,4 +818,58 @@ void transfer_to_calendar_editor() {
 }
 
 
+// Functions to be called by the parent program
 
+void transfer_to_calendar_editor() {
+    initialize_window();
+    ui_state = ViewingCalendar;
+    editor_main_loop();
+}
+
+
+void transfer_to_group_calendar_view() {
+    initialize_window();
+    ui_state = GroupCalendar;
+    editor_main_loop();
+}
+
+
+
+
+
+
+
+
+
+
+    // calendar.busy_times.push_back(TimeBlock(
+    //     "Morning event",
+    //     now.replace_time(1 * 60),
+    //     now.replace_time(4 * 60),
+    //     RepeatType::NoRepeat,
+    //     0
+    // ));
+    
+    // calendar.busy_times.push_back(TimeBlock(
+    //     "Afternoon event",
+    //     now.replace_time(12 * 60),
+    //     now.replace_time(15 * 60),
+    //     RepeatType::Weekly,
+    //     12
+    // ));
+    
+    // calendar.busy_times.push_back(TimeBlock(
+    //     "Daily event",
+    //     now.replace_time(18 * 60),
+    //     now.replace_time(19 * 60),
+    //     RepeatType::Daily,
+    //     30
+    // ));
+    
+    // calendar.busy_times.push_back(TimeBlock(
+    //     "Monthly event",
+    //     now.add_days(2),
+    //     now.add_days(2).add_minutes(90),
+    //     RepeatType::Monthly,
+    //     30
+    // ));
