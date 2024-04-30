@@ -7,7 +7,7 @@
 #include "../shared/core_utils.hpp"
 #define CONFIG_FILE_NAME "config.txt"
 #define DEFAULT_SERVER_HOSTNAME "localhost"
-#define DEFAULT_SERVER_PORT 8080
+#define DEFAULT_SERVER_PORT 7777
 // cached info in static variables - at top of file, can be referenced outside 
 
 static std::string hostname;
@@ -46,14 +46,73 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
     return Failure;
 
 }
-Status send_create_account_request(httplib::Client* client, const std::string& username_string, const std::string& password_string) {
+Status send_create_account_request() {
 
     // Prepare the body of the POST request
     std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
 
     
     // Make a POST request
-    auto res = client->Post("/create_account", body, "text/plain");
+    auto res = my_client->Post("/create_account", body, "text/plain");
+	if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
+		
+		let response_stream = std::istringstream(res-> body);
+		char response_code;
+		response_stream >> response_code;
+		if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+            return Success; 
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+    return Failure;
+
+}
+
+Status send_check_username_request() {
+
+    // Prepare the body of the POST request
+    std::string body = quote_string(username_string);
+
+    
+    // Make a POST request
+    auto res = my_client->Post("/check_username", body, "text/plain");
+	if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
+		
+		let response_stream = std::istringstream(res-> body);
+		char response_code;
+		response_stream >> response_code;
+		if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+            return Success; 
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+    return Failure;
+
+}
+Status send_delete_account_request() {
+
+    // Prepare the body of the POST request
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
+
+    
+    // Make a POST request
+    auto res = my_client->Post("/delete_account", body, "text/plain");
 	if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
         // std::cout << "Status: " << res->status << std::endl;
         // std::cout << "Body: " << res->body << std::endl;
