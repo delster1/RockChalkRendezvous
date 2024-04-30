@@ -1,4 +1,3 @@
-#ifndef RCR_CALENDAR_EDITOR_EXPOSED_FUNCTIONS
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
@@ -223,5 +222,3 @@ void update_screen() {
     }
     wrefresh(login_window); // Make sure to refresh after updates
 }
-
-#endif
