@@ -10,29 +10,23 @@
 #include "httplib.h"
 #include <iostream>
 
-enum MenuOption {
+enum LoginOption {
     LoggingIn,
     Registering,
     Unauthorized,
     Authorized, // this will eventually be an "in menu" state, meaning the user is viewing possible menus
     FailureToAuthorize, // Optional, if you have an exit option
-    ViewingCalendar,
-    ViewingList,
-    AddingStart,
-    AddingEnd,
-    AddingRepeatType,
-    AddingRepeatCount,
-    RemoveConfirm,
+    
 };
 static char username[50];
 static char password[50];
 static WINDOW* login_window;
-static MenuOption MenuState;
+static LoginOption LoginState;
 void prompt_username();
 void prompt_password();
 void get_username_and_password();
 void draw_login_window();
-// MenuOption attempt_login(const char* username, const char* password) {
+// LoginOption attempt_login(const char* username, const char* password) {
 //     if (/* login successful */) {
 //         return SUCCESS;
 //     } else {
@@ -41,7 +35,7 @@ void draw_login_window();
 // }
 
 // // Attempt registration and return success or failure
-// MenuOption attempt_register(const char* username, const char* password) {
+// LoginOption attempt_register(const char* username, const char* password) {
 //     if (/* registration successful */) {
 //         return SUCCESS;
 //     } else {
@@ -82,7 +76,7 @@ void draw_login_window() {
     wrefresh(login_window);  // Refresh the window to show the text
 }
 // Draws the login/registration window and handles user selection
-MenuOption draw_account_choice_window() {
+LoginOption draw_account_choice_window() {
     wrefresh(login_window);
     int current_selection = 0;
     int ch;
@@ -121,7 +115,7 @@ MenuOption draw_account_choice_window() {
                 }
                 break;
             case '\n': // User made a selection
-                return static_cast<MenuOption>(current_selection); // Return the selected option as an enum value
+                return static_cast<LoginOption>(current_selection); // Return the selected option as an enum value
         }
     }
 }
@@ -133,7 +127,7 @@ Status draw_account_auth_window() {
     napms(1000);
     httplib::Client* my_client = build_client();
     Status authorization_result = Failure;
-    switch (MenuState) {
+    switch (LoginState) {
         case LoggingIn:
             // THis is where I'll send login requests
             // another_function(iss);
@@ -147,11 +141,11 @@ Status draw_account_auth_window() {
     switch (authorization_result){
         case Success:
             mvwprintw(login_window, 9, 1, "SUCCESSFULLY AUTHORIZED!");
-            MenuState = MenuOption::Authorized;
+            LoginState = LoginOption::Authorized;
             break;
         case Failure:
             mvwprintw(login_window, 9, 1,  "FAILED TO AUTHORIZE!");
-            MenuState = MenuOption::FailureToAuthorize;
+            LoginState = LoginOption::FailureToAuthorize;
             break;
     }
     wrefresh(login_window);
@@ -180,7 +174,7 @@ void prompt_confirm_password(char* confirm_password) {
 void get_username_and_password(){
     wrefresh(login_window);
     char confirm_password[50];
-    switch (MenuState) {
+    switch (LoginState) {
         // Handle Login and Register if they're still relevant here
         case LoggingIn:
             draw_login_window();
@@ -199,7 +193,7 @@ void get_username_and_password(){
                 wrefresh(login_window);
                 napms(2000);
                 wclear(login_window);
-                MenuState = MenuOption::Unauthorized; // calls back to function when passwords dont match
+                LoginState = LoginOption::Unauthorized; // calls back to function when passwords dont match
             }
             napms(1000);
             break;
@@ -207,9 +201,9 @@ void get_username_and_password(){
 }
 
 void update_screen() {
-    switch (MenuState) {
+    switch (LoginState) {
         case Unauthorized:
-            MenuState = draw_account_choice_window();
+            LoginState = draw_account_choice_window();
             wrefresh(login_window);
             break;
         case LoggingIn:
@@ -223,7 +217,7 @@ void update_screen() {
             wrefresh(login_window);
             break;
         case FailureToAuthorize:
-            MenuState = MenuOption::Unauthorized;
+            LoginState = LoginOption::Unauthorized;
             wclear(login_window);
             break;
     }
@@ -245,7 +239,7 @@ int main() {
     mvwprintw(login_window, 1, 1, "TEST"); // Initial message
     wrefresh(login_window); // Refresh to show initial state
 
-    MenuState = MenuOption::Unauthorized; // Start state
+    LoginState = LoginOption::Unauthorized; // Start state
 
     int character;
     while (true) { // Loop until 'q' is pressed
