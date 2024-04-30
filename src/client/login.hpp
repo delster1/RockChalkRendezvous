@@ -1,3 +1,5 @@
+#ifndef RCR_LOGIN_FILE_CLIENT
+#define RCR_LOGIN_FILE_CLIENT
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
@@ -199,7 +201,7 @@ void get_username_and_password(){
     }
 }
 
-void update_screen() {
+void update_login_screen() {
     switch (LoginState) {
         case Unauthorized:
             LoginState = draw_account_choice_window();
@@ -222,3 +224,4 @@ void update_screen() {
     }
     wrefresh(login_window); // Make sure to refresh after updates
 }
+#endif

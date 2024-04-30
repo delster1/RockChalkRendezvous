@@ -1,7 +1,6 @@
 
 #include "login.hpp"
-
-
+#include "calendar_editor.hpp"
 
 int main() {
     initscr();
@@ -20,9 +19,11 @@ int main() {
     LoginState = LoginOption::Unauthorized; // Start state
 
     int character;
-    while (true) { // Loop until 'q' is pressed
+    while (LoginState != LoginOption::Authorized) { // Loop until 'q' is pressed
         update_login_screen();
     }
+    
+
 
     destroy_window(login_window);
     endwin();

@@ -23,7 +23,7 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
     std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
 
     // Make a POST request
-    auto res = client->Post("/validate_account", body, "text/plain");
+    auto res = my_client->Post("/validate_account", body, "text/plain");
 
     // Check the response
     if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
@@ -67,9 +67,9 @@ Status send_create_account_request(httplib::Client* client, const std::string& u
 		}
     } else {
         if (res) {
-            std::cout << "HTTP Error: " << res->status << std::endl;
+            // std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
-            std::cout << "Network Error: " << res.error() << std::endl;
+            // std::cout << "Network Error: " << res.error() << std::endl;
         }
     }
     return Failure;

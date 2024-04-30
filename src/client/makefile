@@ -3,7 +3,7 @@ TARGET := ui
 FLAGS := -std=c++17 -I../../lib/cpp-httplib -I"../../lib/ncurses/include" -I"../../lib/ncurses/include/ncursesw"
 LINUX_LDLIBS := -lncursesw -pthread
 WIN_LDLIBS := -lssp -L"../../lib/ncurses/lib" -lncursesw -DNCURSES_STATIC -lws2_32
-SOURCES := login.cpp
+SOURCES := ui.cpp
 
 ifeq ($(OS),Windows_NT)
     WINDOWS := yes
