@@ -6,14 +6,21 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+
+
 enum MenuOption {
     // SUCCESS,
     // FAILURE, MIGHT USE THESE FOR LOGIN/REGISTRATION SUCCESS/FAILURE
     LOGIN,
     REGISTER,
+    FAILURE,
     EXIT // Optional, if you have an exit option
 };
 
+void prompt_username(WINDOW* window, char* username);
+void prompt_password(WINDOW* window, char* password);
+void get_username_and_password(WINDOW* window, MenuOption result, char* username, char* passwd);
+void draw_login_window(WINDOW* win);
 // MenuOption attempt_login(const char* username, const char* password) {
 //     if (/* login successful */) {
 //         return SUCCESS;
@@ -108,18 +115,19 @@ MenuOption draw_account_choice_window(WINDOW* win) {
 Status draw_account_auth_window(WINDOW* login_window,MenuOption result,char* username,char* password) {
     wclear(login_window);
 
-    mvwprintw(login_window, 1, 0, "Trying to authorize your account")
+    mvwprintw(login_window, 1, 0, "Trying to authorize your account");
     switch (result) {
         case LOGIN:
-            std::string username;
-            std::string password;
+            // THis is where I'll send login requests
 
-            prompt_username(login_window, username);
-            prompt_password(login_window, password);
-
-            another_function(iss);
+            // another_function(iss);
             break;
-    }
+        case REGISTER:
+            // This is where I'll send register requests 
+            break;
+        case FAILURE:
+            wclear(login_window);
+    }   
     return Failure;
 }
 void prompt_username(WINDOW* window, char* username) {
@@ -140,6 +148,32 @@ void prompt_confirm_password(WINDOW* window, char* password) {
     wgetnstr(window, password, 22);  
 }
 
+void get_username_and_password(WINDOW* window,MenuOption result, char* username, char* password){
+    char confirm_password[22];
+    switch (result) {
+        // Handle LOGIN and REGISTER if they're still relevant here
+        case LOGIN:
+            draw_login_window(window);
+            prompt_username(window, username);
+            prompt_password(window, password);
+            break;
+        case REGISTER:
+            draw_register_window(window);
+            prompt_username(window, username);
+            prompt_password(window, password);
+            prompt_confirm_password(window, confirm_password);
+            if( strcmp(password,confirm_password) == 0) { // also handle account creation here
+                mvwprintw(window, 10, 0, "Creating Account...");
+            }else{
+                mvwprintw(window, 10, 0, "Passwords Don't Match!");
+                wclear(window);
+
+                get_username_and_password(window, result, username, password);
+            }
+            break;
+    }
+}
+
 int main() {
     initscr();
     noecho();
@@ -155,32 +189,13 @@ int main() {
     WINDOW* login_window = create_window(login_height, login_width, start_row, start_col);
     char username[22];
     char password[22];
-    char confirm_password[22];
     
     echo();
 
     MenuOption result = draw_account_choice_window(login_window);
-    switch (result) {
-        // Handle LOGIN and REGISTER if they're still relevant here
-        case LOGIN:
-            draw_login_window(login_window);
-            prompt_username(login_window, username);
-            prompt_password(login_window, password);
-            mvwprintw(login_window, 10, 0, "Logging into account!");
-            break;
-        case REGISTER:
-            draw_register_window(login_window);
-            prompt_username(login_window, username);
-            prompt_password(login_window, password);
-            prompt_confirm_password(login_window, confirm_password);
-            if( strcmp(password,confirm_password) == 0) { // also handle account creation here
-                mvwprintw(login_window, 10, 0, "Creating Account...");
-            }else{
-                mvwprintw(login_window, 10, 0, "Passwords Don't Match!");
-            }
-            break;
-    }
-    status authorization = draw_account_auth_window(login_window, result, username, password);
+    get_username_and_password(login_window, result, username, password);
+    // take user input for username and password
+    Status authorization = draw_account_auth_window(login_window, result, username, password);
     
  
     noecho();
