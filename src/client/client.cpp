@@ -3,8 +3,8 @@
 #include <string>
 #include "httplib.h"
 #include <iostream>
-#include "../../prototype/networking_proto.hpp"
-#include "../../prototype/core_utils_proto.hpp"
+#include "../shared/networking.hpp"
+#include "../shared/core_utils.hpp"
 #define CONFIG_FILE_NAME "config.txt"
 #define DEFAULT_SERVER_HOSTNAME "localhost"
 #define DEFAULT_SERVER_PORT 8080
