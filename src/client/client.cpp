@@ -42,8 +42,9 @@ Status send_login_request(httplib::Client* client, const std::string& username_s
         } else {
             std::cout << "Network Error: " << res.error() << std::endl;
         }
-        return Failure;
     }
+    return Failure;
+
 }
 Status send_create_account_request(httplib::Client* client, const std::string& username_string, const std::string& password_string) {
 

@@ -8,7 +8,7 @@
 #include <cstring>
 #include "client.cpp"
 #include "httplib.h"
-
+#include <iostream>
 
 enum MenuOption {
     LoggingIn,
@@ -121,15 +121,15 @@ MenuOption draw_account_choice_window() {
 
 Status draw_account_auth_window() {
     wclear(login_window);
+    mvwprintw(login_window, 7, 0, "Trying to authorize your account");
+    wrefresh(login_window);
     httplib::Client* my_client = build_client();
     Status authorization_result = Failure;
-    mvwprintw(login_window, 9, 0, "Trying to authorize your account");
     switch (MenuState) {
         case LoggingIn:
             // THis is where I'll send login requests
             // another_function(iss);
             authorization_result = send_login_request(my_client, username, password);
-            
             break;
         case Registering:
             // This is where I'll send register requests 
@@ -138,15 +138,19 @@ Status draw_account_auth_window() {
     }
     switch (authorization_result){
         case Success:
-            MenuState = Authorized;
+            mvwprintw(login_window, 9, 1, "SUCCESSFULLY AUTHORIZED!");
+            MenuState = MenuOption::Authorized;
             break;
         case Failure:
-            MenuState = FailureToAuthorize;
+            mvwprintw(login_window, 9, 1,  "FAILED TO AUTHORIZE!");
+            MenuState = MenuOption::FailureToAuthorize;
             break;
     }
-    wclear(login_window);
+    wrefresh(login_window);
+    napms(2000);
     return authorization_result;
 }
+
 void prompt_username() {
     echo();
     wmove(login_window, 2, 19);
@@ -184,8 +188,10 @@ void get_username_and_password(){
                 mvwprintw(login_window, 9, 0, "Creating Account...");
             }else{
                 mvwprintw(login_window, 9, 0, "Passwords Don't Match!");
+                wclear(login_window);
                 get_username_and_password(); // calls back to function when passwords dont match
             }
+            napms(1000);
             break;
     }
 }
@@ -194,20 +200,21 @@ void update_screen() {
     switch (MenuState) {
         case Unauthorized:
             MenuState = draw_account_choice_window();
+            wrefresh(login_window);
             break;
         case LoggingIn:
         case Registering:
+            wclear(login_window);
             get_username_and_password();
             draw_account_auth_window();
+            wrefresh(login_window);
             break;
         case Authorized:
-            mvwprintw(login_window, 9, 1, "SUCCESSFULLY AUTHORIZED!");
             wrefresh(login_window);
             break;
         case FailureToAuthorize:
-            mvwprintw(login_window, 9, 1,  "FAILED TO AUTHORIZE!");
             MenuState = MenuOption::Unauthorized;
-            wrefresh(login_window);
+            wclear(login_window);
             break;
     }
     wrefresh(login_window); // Make sure to refresh after updates
