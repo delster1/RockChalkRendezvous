@@ -197,7 +197,7 @@ struct TimeAndDate { // MARK: TimeAndDate
 	
 	// September 31 -> October 1
 	inline static TimeAndDate build_from_month_wrap_day(i32 minute, i32 day, i32 month, i32 year) {
-		year += (month - mod(month, 12)) / 12; // todo fix bug here
+		year += (month - mod(month, 12)) / 12;
 		return TimeAndDate::build(minute, find_day_of_year(static_cast<Month>(mod(month, 12)), day, year), year);
 	}
 	
