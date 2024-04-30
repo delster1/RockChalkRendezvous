@@ -137,7 +137,7 @@ void draw_block(const TimeAndDate& display_start, const TimeAndDate& display_end
         
         for (u32 row = start_row + 2; row <= end_row + 2; row++) {
             u32 color_id = color_choice;
-            if (render_select && (row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week)) color_id += 8;
+            if (render_select && color_id < 8 && (row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week)) color_id += 8;
             wattron(calendar_window, COLOR_PAIR(color_id));
             mvwprintw(calendar_window, row, x, "%s", std::string(calendar_day_width, '#').c_str());
             wattroff(calendar_window, COLOR_PAIR(color_id));
@@ -248,199 +248,136 @@ void draw_event_list() {
 
 
 
-
-
-
-
-
-
-
-// draws the time block removal screen with the selected time block highlighted
-void draw_remove_calendar(int selected_index) {
-    wclear(calendar_window);
-    
-    wattron(calendar_window, COLOR_PAIR(2));
-    mvwprintw(calendar_window, 1, 0, "Date");
-    // for (int i = 0; i < days_of_week; ++i) {
-    //     TimeAndDate day = start.add_days(i);
-    //     mvwprintw(calendar_window, 1, 5 + i * 20, "%s", day.to_string().c_str());
-    // }
-    wattroff(calendar_window, COLOR_PAIR(2));
-    
-    // print the time blocks
-    int line = 2;
-    for (int i = 0; i < calendar.busy_times.size(); i++) {
-        int x = 5;
-        TimeBlock& block = calendar.busy_times[i];
-        std::string display = block.start.to_string() + " - " + block.end.to_string();
-        if (i == selected_index) {
-            wattron(calendar_window, A_REVERSE);
-        }
-        mvwprintw(calendar_window, line++, x, "%s", display.c_str());
-        if (i == selected_index) {
-            wattroff(calendar_window, A_REVERSE);
-        }
-    }
-    
-    wrefresh(calendar_window);
+void draw_view_interaction() {
+    mvwprintw(interact_window, 1, 3, "L: List View");
+    mvwprintw(interact_window, 2, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 3, 3, "A/D: Scroll Left / Right");
+    mvwprintw(interact_window, 4, 3, "Arrow Keys: Move Selection Cursor");
+    mvwprintw(interact_window, 5, 3, "N: Add a New Event");
+    mvwprintw(interact_window, 6, 3, "Q: Save and Exit");
 }
 
-// draw the controls to the window
-void draw_interactions() {
-    mvwprintw(interact_window, 1, 1, "Press F1 to exit or 'j' and 'k' to scroll the above window.");
-    mvwprintw(interact_window, 2, 1, "Press A/D to scroll Left/Right in the calendar.");
-    mvwprintw(interact_window, 3, 1, "1) Add Time Block");
-    mvwprintw(interact_window, 4, 1, "2) Remove Time Block");
-    
-    wrefresh(interact_window);
+void draw_list_interaction() {
+    mvwprintw(interact_window, 1, 3, "C: Calendar View");
+    mvwprintw(interact_window, 2, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 3, 3, "Arrow Keys: Select Event");
+    mvwprintw(interact_window, 4, 3, "Backspace: Delete Selected Event");
+    mvwprintw(interact_window, 5, 3, "Q: Save and Exit");
 }
 
-void draw_remove_interactions() {
-    int selected_index = 0;
-    int character;
-    bool running = true;
-    while (running) {
-        wclear(interact_window);
-        mvwprintw(interact_window, 1, 1, "Navigate with UP/DOWN arrows. Press ENTER to delete. Press 'q' to quit.");
-        wrefresh(interact_window);
-        character = wgetch(interact_window);
-        
-        switch (character) {
-            case KEY_UP:
-                if (selected_index > 0) selected_index -= 1;
-                break;
-            case KEY_DOWN:
-                if (selected_index < calendar.busy_times.size() - 1) {
-                    selected_index += 1;
-                }
-                break;
-            case '\n':  // User confirms deletion
-                calendar.busy_times.erase(calendar.busy_times.begin() + selected_index);
-                if (selected_index > calendar.busy_times.size()) {
-                    selected_index = fmax(0, calendar.busy_times.size() - 1);
-                }
-                break;
-            case 'q':  // Exit loop
-                running = false;
-                break;
-        }
-        draw_remove_calendar(selected_index);
-    }
+void draw_remove_confirm_interaction() {
+    mvwprintw(interact_window, 1, 3, "Are you sure you want to delete this event?");
+    mvwprintw(interact_window, 3, 3, "Backspace: Cancel");
+    mvwprintw(interact_window, 4, 3, "Enter: Confirm");
+    mvwprintw(interact_window, 5, 3, "Q: Save and Exit");
+}
+
+void draw_adding_start_interaction() {
+    mvwprintw(interact_window, 1, 3, "Select the start time of the new event. Start time: %s", calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes(calendar_selected_row * calendar_row_size).to_string().c_str());
+    mvwprintw(interact_window, 3, 3, "Backspace: Cancel");
+    mvwprintw(interact_window, 4, 3, "Enter: Confirm");
+    mvwprintw(interact_window, 5, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 6, 3, "A/D: Scroll Left / Right");
+    mvwprintw(interact_window, 7, 3, "Arrow Keys: Move Selection Cursor");
+    mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
+}
+
+void draw_adding_end_interaction() {
+    mvwprintw(interact_window, 1, 3, "Select the end time of the new event. Start time: %s", new_start_time.to_string().c_str());
+    mvwprintw(interact_window, 2, 3, "                                        End time: %s", calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes((calendar_selected_row + 1) * calendar_row_size).to_string().c_str());
+    mvwprintw(interact_window, 3, 3, "Backspace: Go Back");
+    mvwprintw(interact_window, 4, 3, "Enter: Confirm");
+    mvwprintw(interact_window, 5, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 6, 3, "A/D: Scroll Left / Right");
+    mvwprintw(interact_window, 7, 3, "Arrow Keys: Move Selection Cursor");
+    mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
+}
+
+void draw_adding_repeat_type_interaction() {
+    mvwprintw(interact_window, 1, 3, "Choose a repeat frequency.");
+    mvwprintw(interact_window, 3, 3, "O/N: One Time Event");
+    mvwprintw(interact_window, 4, 3, "D: Daily");
+    mvwprintw(interact_window, 5, 3, "W: Weekly");
+    mvwprintw(interact_window, 6, 3, "M: Monthly");
+    mvwprintw(interact_window, 7, 3, "Y: Yearly");
+    mvwprintw(interact_window, 8, 3, "Backspace: Go Back");
+    mvwprintw(interact_window, 9, 3, "Q: Save and Exit");
+}
+
+void draw_adding_repeat_count_interaction() {
+    mvwprintw(interact_window, 1, 3, "Choose the number of repetitions. Repeat count: %d    Last occurrance: %s",
+        new_repeat_count + 1,
+        std::get<0>(TimeBlock("", new_start_time, new_end_time, new_repeat_type, new_repeat_count).get_occurrence(new_repeat_count)).to_string().c_str()
+    );
+    mvwprintw(interact_window, 3, 3, "Arrow Keys: Select Repeat Count");
+    mvwprintw(interact_window, 4, 3, "Backspace: Go Back");
+    mvwprintw(interact_window, 5, 3, "Enter: Create Event");
+    mvwprintw(interact_window, 6, 3, "W/S: Scroll Up / Down");
+    mvwprintw(interact_window, 7, 3, "A/D: Scroll Left / Right");
+    mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
 }
 
 
-// Convert a string to a TimeAndDate object
-TimeAndDate convert_string_to_time(char time_string[22]) {
-    int hour, minute, month, day, year;
-    sscanf(time_string, "%d:%d %d %d %d", &hour, &minute, &month, &day, &year);
-    
-    return TimeAndDate::build_from_month(hour * 60 + minute, day, static_cast<Month>(month - 1), year);
-}
 
-// ask user for a time given as a string
-std::string prompt_user_for_time() {
-    wclear(interact_window);
-    mvwprintw(interact_window, 1, 1, "Enter the time block start Time: 24-hour time:minutes Month(Numerical) Day Year (press Enter when done): ");
-    wrefresh(interact_window);
-    
-    char time_string[22] = {0};  // Buffer to hold the input string
-    
-    wmove(interact_window, 2, 0);
-    wgetnstr(interact_window, time_string, 22);  
-    
-    // Optional: display the input for confirmation
-    mvwprintw(interact_window, 3, 0, "You entered: %s", time_string);
-    wrefresh(interact_window);
-    return std::string(time_string);
-}
 
-// ask user for repeat type of the block
-char prompt_user_for_repeat() {
-    wclear(interact_window);
-    mvwprintw(interact_window, 1, 1, "Please enter the repeat type of this block:\n\t\'N\' - None\n\t\'D\' - Daily\n\t\'W\' - Weekly\n\t\'M\' - Monthly\n\t\'Y\' - Yearly");
-    wrefresh(interact_window);
-    
-    char repeat[1] = {0};  // Buffer to hold the input string
-    
-    wmove(interact_window, 7, 0);
-    wgetnstr(interact_window, repeat, 1);  
-    
-    return repeat[0];
-}
 
-// ask user for time block repeat interval
-int prompt_user_for_repeat_interval() {
-    wclear(interact_window);
-    mvwprintw(interact_window, 1, 1, "Please enter the number of repetitions for this block: ");
-    wrefresh(interact_window);
+// TimeBlock run_add_block() {
+//     echo();  // Enable echoing of characters typed by the user
+//     keypad(interact_window, TRUE);  // Enable keypad for the window to handle function keys
     
-    char repeat[3] = {0};  // Buffer to hold the input string
-    
-    wmove(interact_window, 7, 0);
-    wgetnstr(interact_window, repeat, 10);
-    
-    int repeat_interval = atoi(repeat);
-    return repeat_interval;
-}
-
-// add time block to calendar
-TimeBlock run_add_block() {
-    echo();  // Enable echoing of characters typed by the user
-    keypad(interact_window, TRUE);  // Enable keypad for the window to handle function keys
-    
-    // Clear the window and prepare for input
-    char start_time_string[22];
-    strcpy(start_time_string, prompt_user_for_time().c_str());
-    wclear(interact_window);
-    char end_time_string[22];
-    strcpy(end_time_string, prompt_user_for_time().c_str());
-    wclear(interact_window);
+//     // Clear the window and prepare for input
+//     char start_time_string[22];
+//     strcpy(start_time_string, prompt_user_for_time().c_str());
+//     wclear(interact_window);
+//     char end_time_string[22];
+//     strcpy(end_time_string, prompt_user_for_time().c_str());
+//     wclear(interact_window);
     
     
-    // Optional: display the input for confirmation
-    wrefresh(interact_window);
+//     // Optional: display the input for confirmation
+//     wrefresh(interact_window);
     
-    // Wait for a key press before continuing
-    TimeAndDate start_time = convert_string_to_time(start_time_string);
-    TimeAndDate end_time = convert_string_to_time(end_time_string);
-    char repeat = prompt_user_for_repeat();
-    unsigned int repeat_interval = 0;
-    RepeatType repeat_type;
+//     // Wait for a key press before continuing
+//     TimeAndDate start_time = convert_string_to_time(start_time_string);
+//     TimeAndDate end_time = convert_string_to_time(end_time_string);
+//     char repeat = prompt_user_for_repeat();
+//     unsigned int repeat_interval = 0;
+//     RepeatType repeat_type;
     
-    switch (repeat) {
-        case 'N':
-            repeat_type = RepeatType::NoRepeat;
-            break;
-        case 'D':
-            repeat_type = RepeatType::Daily;
-            break;
-        case 'W':
-            repeat_type = RepeatType::Weekly;
-            break;
-        case 'M':
-            repeat_type = RepeatType::Monthly;
-            break;
-        case 'Y':
-            repeat_type = RepeatType::Yearly;
-            break;
-        default:
-            repeat_type = RepeatType::NoRepeat;
-            break;
-    }
+//     switch (repeat) {
+//         case 'N':
+//             repeat_type = RepeatType::NoRepeat;
+//             break;
+//         case 'D':
+//             repeat_type = RepeatType::Daily;
+//             break;
+//         case 'W':
+//             repeat_type = RepeatType::Weekly;
+//             break;
+//         case 'M':
+//             repeat_type = RepeatType::Monthly;
+//             break;
+//         case 'Y':
+//             repeat_type = RepeatType::Yearly;
+//             break;
+//         default:
+//             repeat_type = RepeatType::NoRepeat;
+//             break;
+//     }
     
-    if (repeat != 'N') {
-        repeat_interval = prompt_user_for_repeat_interval();
-    }
+//     if (repeat != 'N') {
+//         repeat_interval = prompt_user_for_repeat_interval();
+//     }
     
-    let new_block = TimeBlock("new event", start_time, end_time, repeat_type, repeat_interval);
-    wclear(interact_window);
-    mvwprintw(interact_window, 1, 0, "%s", new_block.encode().c_str());
+//     let new_block = TimeBlock("new event", start_time, end_time, repeat_type, repeat_interval);
+//     wclear(interact_window);
+//     mvwprintw(interact_window, 1, 0, "%s", new_block.encode().c_str());
     
-    wgetch(interact_window);
+//     wgetch(interact_window);
     
-    noecho();
-    return new_block;
-}
+//     noecho();
+//     return new_block;
+// }
 
 
 
@@ -838,25 +775,25 @@ int main() {
         switch (ui_state) {
             case ViewingCalendar:
                 draw_calendar_week();
-                //draw_view_interaction();
+                draw_view_interaction();
                 break;
             case ViewingList:
                 draw_event_list();
-                //draw_list_interaction();
+                draw_list_interaction();
                 break;
             case AddingStart:
                 draw_calendar_week();
-                //draw_adding_start_interaction();
+                draw_adding_start_interaction();
                 break;
             case AddingEnd:
                 draw_calendar_week();
                 draw_block(new_start_time, calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes((calendar_selected_row + 1) * calendar_row_size), 14);
-                //draw_adding_end_interaction();
+                draw_adding_end_interaction();
                 break;
             case AddingRepeatType:
                 draw_calendar_week();
                 draw_block(new_start_time, calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes((calendar_selected_row + 1) * calendar_row_size), 14);
-                //draw_adding_repeat_type_interaction();
+                draw_adding_repeat_type_interaction();
                 break;
             case AddingRepeatCount:
                 draw_calendar_week();
@@ -868,11 +805,11 @@ int main() {
                 for (auto occurrence : occurrences) {
                     draw_block(std::get<1>(occurrence), std::get<2>(occurrence), 14);
                 }
-                //draw_adding_repeat_count_interaction();
+                draw_adding_repeat_count_interaction();
                 break;
             case RemoveConfirm:
                 draw_event_list();
-                //draw_remove_confirm_interaction();
+                draw_remove_confirm_interaction();
                 break;
         }
         
