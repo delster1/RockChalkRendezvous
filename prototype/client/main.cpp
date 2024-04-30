@@ -71,7 +71,6 @@ Status send_create_account_request(httplib::Client client, const std::string& us
     }
 }
 
-
 int main() {
     std::string hostname;
     int port;
