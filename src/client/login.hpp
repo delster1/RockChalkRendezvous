@@ -127,16 +127,18 @@ Status draw_account_auth_window() {
     wrefresh(login_window);
     napms(1000);
     httplib::Client* my_client = build_client();
+    username_string = username;
+    password_string = password;
     Status authorization_result = Failure;
     switch (LoginState) {
         case LoggingIn:
             // THis is where I'll send login requests
             // another_function(iss);
-            authorization_result = send_login_request(my_client, username, password);
+            authorization_result = send_login_request();
             break;
         case Registering:
             // This is where I'll send register requests 
-            authorization_result = send_create_account_request(my_client, username, password);
+            authorization_result = send_create_account_request();
             break;
     }
     switch (authorization_result){

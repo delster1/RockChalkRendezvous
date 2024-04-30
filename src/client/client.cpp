@@ -43,7 +43,7 @@ Status send_ping_request() {
     return Failure;
 }
 
-Status send_login_request(httplib::Client* client, const std::string& username_string, const std::string& password_string) {
+Status send_login_request() {
     // Quote the username_string and password_string to ensure they are transmitted in a format the server expects.
 
     // Prepare the body of the POST request
