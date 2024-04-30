@@ -1,7 +1,6 @@
 #include <ncurses.h>
-#include "../../prototype/timeanddate.hpp"
-#include "../../prototype/calendar.hpp"
-#include "client.cpp"
+#include "../shared/timeanddate.hpp"
+#include "../shared/calendar.hpp"
 #include <string.h>
 #include <vector>
 #include <algorithm>
