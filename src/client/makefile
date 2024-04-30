@@ -2,7 +2,7 @@ CC := g++
 TARGET := ui
 FLAGS := -std=c++17 -I../../lib/cpp-httplib -I"../../lib/ncurses/include" -I"../../lib/ncurses/include/ncursesw"
 LINUX_LDLIBS := -lncursesw -pthread
-WIN_LDLIBS := -lWs2_32 -lssp -L"../../lib/ncurses/lib" -lncurses -DNCURSES_STATIC
+WIN_LDLIBS := -lssp -L"../../lib/ncurses/lib" -lncursesw -DNCURSES_STATIC
 SOURCES := login.cpp
 
 ifeq ($(shell echo "check_quotes"),"check_quotes")
