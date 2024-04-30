@@ -3,10 +3,23 @@
 #include <algorithm>
 #include <iostream>
 #include <thread>
+#include <tuple>
 #include <ncurses.h>
 
 #include "../timeanddate.hpp"
 #include "../calendar.hpp"
+
+
+enum UIState {
+    ViewingCalendar,
+    ViewingList,
+    AddingStart,
+    AddingEnd,
+    AddingRepeatType,
+    AddingRepeatCount,
+    AddingName,
+    Removing,
+};
 
 
 static u32 screen_height;
@@ -22,71 +35,193 @@ static WINDOW* interact_window;
 static u32 calendar_time_margin = 5;
 static u32 calendar_day_width;
 
+static Calendar calendar;
+
+static UIState ui_state = ViewingCalendar;
+
+static u32 calendar_scroll_offset = 0;
+static TimeAndDate calendar_start_day;
+static u32 calendar_selected_row, calendar_selected_day_of_week;
+
+static u32 list_scroll_offset = 0;
+static u32 list_selected_index = 0;
+static bool list_local = true;
+
+static TimeAndDate new_start_time, new_end_time;
+static RepeatType new_repeat_type;
+static u32 new_repeat_count;
+
+
 
 inline std::string pad_center(std::string s, u32 width) {
     return std::string((width - s.length()) / 2, ' ') + s;
 }
 
 
-void draw_calendar_week(const TimeAndDate& start_day, const Calendar& my_calendar, const u32 scroll_offset) {
+// Select instances of time blocks that appear in the visible area
+std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> render_block(const TimeBlock& block, const TimeAndDate& start_day, const TimeAndDate& end_day) {
+    std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> visible_occurences;
+    
+    if (block.start >= end_day) return visible_occurences;
+    
+    i32 first_occurrence, last_occurrence;
+    
+    if (block.repeat_period == NoRepeat) {
+        first_occurrence = 0;
+        last_occurrence = 0;
+    } else {
+        switch (block.repeat_period) {
+            case Daily:
+                first_occurrence = -block.end.days_since(start_day);
+                last_occurrence = end_day.days_since(block.start);
+                break;
+            case Weekly:
+                first_occurrence = -block.end.days_since(start_day) / 7;
+                last_occurrence = end_day.days_since(block.start) / 7;
+                break;
+            case Monthly:
+                first_occurrence = -block.end.months_since(start_day);
+                last_occurrence = end_day.months_since(block.start);
+                break;
+            case Yearly:
+                first_occurrence = -block.end.years_since(start_day);
+                last_occurrence = end_day.years_since(block.start);
+                break;
+            default: return visible_occurences;
+        }
+        
+        if (first_occurrence > block.repeat_count) return visible_occurences;
+        if (last_occurrence < 0) return visible_occurences;
+        if (first_occurrence > last_occurrence) return visible_occurences;
+        if (first_occurrence < 0) first_occurrence = 0;
+        if (last_occurrence > block.repeat_count) last_occurrence = block.repeat_count;
+    }
+    
+    for (u32 n = first_occurrence; n <= last_occurrence; n++) {
+        std::tuple<TimeAndDate, TimeAndDate> occurrence = block.get_occurrence(n);
+        TimeAndDate display_start = std::get<0>(occurrence);
+        TimeAndDate display_end = std::get<1>(occurrence);
+        
+        if (display_end <= start_day) continue; // skip the occurrence if it was only permitted due to the extraneous row
+        if (display_start < start_day) display_start = start_day;
+        if (display_end > end_day) display_end = end_day;
+        
+        visible_occurences.push_back(std::make_tuple(n, display_start, display_end));
+    }
+    
+    return visible_occurences;
+}
+
+
+void draw_block(const TimeAndDate& display_start, const TimeAndDate& display_end, const u32 color_choice) {
+    u32 start_day_of_week = display_start.get_day_of_week();
+    u32 end_day_of_week = display_end.add_minutes(-1).get_day_of_week();
+    for (u32 day_of_week = display_start.get_day_of_week(); day_of_week <= end_day_of_week; day_of_week++) {
+        u32 x = calendar_time_margin + 1 + day_of_week * (calendar_day_width + 1);
+        
+        i32 start_row = 0;
+        i32 end_row = 95;
+        if (day_of_week == start_day_of_week) start_row = display_start.get_minute_of_day() / 15;
+        if (day_of_week == end_day_of_week) end_row = display_end.add_minutes(-1).get_minute_of_day() / 15;
+        
+        if (start_row > calendar_scroll_offset) start_row -= calendar_scroll_offset;
+        else start_row = 0;
+        if (end_row < calendar_window_height - 2 + calendar_scroll_offset) end_row -= calendar_scroll_offset;
+        else end_row = calendar_window_height - 3;
+        
+        if (start_row >= calendar_window_height - 2) continue;
+        if (end_row < 0) continue;
+        
+        for (u32 row = start_row + 2; row <= end_row + 2; row++) {
+            u32 color_id = color_choice;
+            if ((row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week)) color_id += 8;
+            wattron(calendar_window, COLOR_PAIR(color_id));
+            mvwprintw(calendar_window, row, x, "%s", std::string(calendar_day_width, '#').c_str());
+            wattroff(calendar_window, COLOR_PAIR(color_id));
+        }
+    }
+}
+
+
+
+void draw_calendar_week() {
     wclear(calendar_window);
     
-    wattron(calendar_window, COLOR_PAIR(1));
-    mvwprintw(calendar_window, 1, 0, "Date");
+    wattron(calendar_window, COLOR_PAIR(2));
+    mvwprintw(calendar_window, 1, 0, pad_center(std::to_string(calendar_start_day.get_year()), 6).c_str());
     
     // print the days of the week
     for (int day_of_week = 0; day_of_week < 7; day_of_week++) {
-        TimeAndDate day = start_day.add_days(day_of_week);
+        TimeAndDate day = calendar_start_day.add_days(day_of_week);
         u32 x = calendar_time_margin + 1 + day_of_week * (calendar_day_width + 1);
         mvwprintw(calendar_window, 0, x, "%s", pad_center(DAY_NAMES[day_of_week], calendar_day_width).c_str());
         let md = day.get_month_and_day();
-        mvwprintw(calendar_window, 1, x, "%s", pad_center(MONTH_NAMES[md.month].substr(0, 3) + " " + std::to_string(md.day), calendar_day_width).c_str());
+        mvwprintw(calendar_window, 1, x, "%s", pad_center(MONTH_NAMES[md.month] + " " + std::to_string(md.day), calendar_day_width).c_str());
     }
-    wattroff(calendar_window, COLOR_PAIR(1));
+    wattroff(calendar_window, COLOR_PAIR(2));
     
     // loop through the time intervals and days of the week
     // prints busy times as # and free times as -
-    for (u32 row = 0; row < calendar_window_height - 2; row++) {
-        u32 minute = (row + scroll_offset) * 15;
-        mvwprintw(calendar_window, row + 2, 0, "%2d:%02d", minute / 60, minute % 60);
+    for (u32 row = 2; row < calendar_window_height; row++) {
+        u32 minute = (row - 2 + calendar_scroll_offset) * 15;
+        mvwprintw(calendar_window, row, 0, "%2d:%02d", minute / 60, minute % 60);
         
-        for (int day_of_week = 0; day_of_week < 7; day_of_week++) {
+        for (u32 day_of_week = 0; day_of_week < 7; day_of_week++) {
             u32 x = calendar_time_margin + 1 + day_of_week * (calendar_day_width + 1);
+            bool selected = (row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week);
             
-            TimeAndDate currentTime = start_day.add_days(day_of_week).replace_time(minute);
-            
-            if (my_calendar.is_time_block_busy(currentTime)) {
-                wattron(calendar_window, COLOR_PAIR(1));
-                mvwprintw(calendar_window, row + 2, x, "%s", std::string(calendar_day_width, '#').c_str());
-                wattroff(calendar_window, COLOR_PAIR(1));
-            } else {
-                wattron(calendar_window, COLOR_PAIR(2));
-                mvwprintw(calendar_window, row + 2, x, "%s", std::string(calendar_day_width, '-').c_str());
-                wattroff(calendar_window, COLOR_PAIR(2));
-            }
+            if (selected) wattron(calendar_window, COLOR_PAIR(9));
+            else wattron(calendar_window, COLOR_PAIR(1));
+            mvwprintw(calendar_window, row, x, "%s", std::string(calendar_day_width, '-').c_str());
+            if (selected) wattroff(calendar_window, COLOR_PAIR(9));
+            else wattroff(calendar_window, COLOR_PAIR(1));
         }
+    }
+    
+    i32 selected_row_draw = calendar_selected_row - calendar_scroll_offset + 2;
+    if (selected_row_draw >= 2 && selected_row_draw < calendar_window_height) {
+        u32 selected_x = calendar_time_margin + 1 + calendar_selected_day_of_week * (calendar_day_width + 1);
+        wattron(calendar_window, COLOR_PAIR(10));
+        mvwprintw(calendar_window, selected_row_draw, selected_x - 1, ">");
+        mvwprintw(calendar_window, selected_row_draw, selected_x + calendar_day_width, "<");
+        wattroff(calendar_window, COLOR_PAIR(10));
+    }
+    
+    TimeAndDate end_day = calendar_start_day.add_days(7);
+    
+    u32 color_choice = 3;
+    
+    for (const TimeBlock& block : calendar.busy_times) {
+        std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> occurrences = render_block(block, calendar_start_day, end_day);
+        for (auto occurrence : occurrences) {
+            draw_block(std::get<1>(occurrence), std::get<2>(occurrence), color_choice);
+        }
+        color_choice += 1;
+        if (color_choice > 7) color_choice = 3;
     }
     
     wrefresh(calendar_window);
 }
 
+
+
 // draws the time block removal screen with the selected time block highlighted
-void draw_remove_calendar(Calendar& my_calendar, int selected_index) {
+void draw_remove_calendar(int selected_index) {
     wclear(calendar_window);
     
-    wattron(calendar_window, COLOR_PAIR(1));
+    wattron(calendar_window, COLOR_PAIR(2));
     mvwprintw(calendar_window, 1, 0, "Date");
     // for (int i = 0; i < days_of_week; ++i) {
     //     TimeAndDate day = start.add_days(i);
     //     mvwprintw(calendar_window, 1, 5 + i * 20, "%s", day.to_string().c_str());
     // }
-    wattroff(calendar_window, COLOR_PAIR(1));
+    wattroff(calendar_window, COLOR_PAIR(2));
     
     // print the time blocks
     int line = 2;
-    for (int i = 0; i < my_calendar.busy_times.size(); i++) {
+    for (int i = 0; i < calendar.busy_times.size(); i++) {
         int x = 5;
-        TimeBlock& block = my_calendar.busy_times[i];
+        TimeBlock& block = calendar.busy_times[i];
         std::string display = block.start.to_string() + " - " + block.end.to_string();
         if (i == selected_index) {
             wattron(calendar_window, A_REVERSE);
@@ -110,7 +245,7 @@ void draw_interactions() {
     wrefresh(interact_window);
 }
 
-void draw_remove_interactions(Calendar& my_calendar) {
+void draw_remove_interactions() {
     int selected_index = 0;
     int character;
     bool running = true;
@@ -125,21 +260,21 @@ void draw_remove_interactions(Calendar& my_calendar) {
                 if (selected_index > 0) selected_index -= 1;
                 break;
             case KEY_DOWN:
-                if (selected_index < my_calendar.busy_times.size() - 1) {
+                if (selected_index < calendar.busy_times.size() - 1) {
                     selected_index += 1;
                 }
                 break;
             case '\n':  // User confirms deletion
-                my_calendar.busy_times.erase(my_calendar.busy_times.begin() + selected_index);
-                if (selected_index > my_calendar.busy_times.size()) {
-                    selected_index = fmax(0, my_calendar.busy_times.size() - 1);
+                calendar.busy_times.erase(calendar.busy_times.begin() + selected_index);
+                if (selected_index > calendar.busy_times.size()) {
+                    selected_index = fmax(0, calendar.busy_times.size() - 1);
                 }
                 break;
             case 'q':  // Exit loop
                 running = false;
                 break;
         }
-        draw_remove_calendar(my_calendar, selected_index);
+        draw_remove_calendar(selected_index);
     }
 }
 
@@ -247,7 +382,7 @@ TimeBlock run_add_block() {
         repeat_interval = prompt_user_for_repeat_interval();
     }
     
-    let new_block = TimeBlock(start_time, end_time, repeat_type, repeat_interval);
+    let new_block = TimeBlock("new event", start_time, end_time, repeat_type, repeat_interval);
     wclear(interact_window);
     mvwprintw(interact_window, 1, 0, "%s", new_block.encode().c_str());
     
@@ -256,6 +391,45 @@ TimeBlock run_add_block() {
     noecho();
     return new_block;
 }
+
+
+
+// void update_display() {
+//     switch (ui_state) {
+//         case ViewingCalendar:
+//             draw_calendar_week();
+//             draw_view_interaction();
+//             break;
+//         case ViewingList:
+//             draw_event_list();
+//             draw_list_interaction();
+//             break;
+//         case AddingStart:
+//             draw_calendar_week();
+//             draw_adding_start_interaction();
+//             break;
+//         case AddingEnd:
+//             draw_calendar_week();
+//             draw_adding_end_interaction();
+//             break;
+//         case AddingRepeatType:
+//             draw_calendar_week();
+//             draw_adding_repeat_type_interaction();
+//             break;
+//         case AddingRepeatCount:
+//             draw_calendar_week();
+//             draw_adding_repeat_count_interaction();
+//             break;
+//         case AddingName:
+//             draw_calendar_week();
+//             draw_adding_name_interaction();
+//             break;
+//         case Removing:
+//             draw_event_list();
+//             draw_removing_interaction();
+//             break;
+//     }
+// }
 
 
 void on_resize() {
@@ -272,6 +446,12 @@ void on_resize() {
     mvwin(interact_window, calendar_window_height, 0);
     
     calendar_day_width = (calendar_window_width - calendar_time_margin - 8) / 7;
+    
+    if (calendar_scroll_offset > 96 - (calendar_window_height - 2)) {
+        calendar_scroll_offset = 96 - (calendar_window_height - 2);
+    }
+    
+    //update_display();
 }
 
 
@@ -281,41 +461,60 @@ int main() {
     noecho();
     cbreak();
     start_color();
-    init_pair(1, COLOR_CYAN, COLOR_BLACK);
-    init_pair(2, COLOR_WHITE, COLOR_BLACK);
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_CYAN, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
+    init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(5, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(6, COLOR_BLUE, COLOR_BLACK);
+    init_pair(7, COLOR_RED, COLOR_BLACK);
+    
+    init_pair(9, COLOR_BLACK, COLOR_WHITE);
+    init_pair(10, COLOR_BLACK, COLOR_CYAN);
+    init_pair(11, COLOR_WHITE, COLOR_GREEN);
+    init_pair(12, COLOR_WHITE, COLOR_MAGENTA);
+    init_pair(13, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(14, COLOR_WHITE, COLOR_BLUE);
+    init_pair(15, COLOR_WHITE, COLOR_RED);
     
     calendar_window = newwin(0, 0, 0, 0);
     interact_window = newwin(0, 0, 0, 0);
-    scrollok(calendar_window, TRUE); // Enable scrolling for the calendar window
     keypad(interact_window, TRUE); // Enable keypad input for interaction window
-    nodelay(interact_window, TRUE);
-    box(interact_window, 0, 0);
+    nodelay(interact_window, TRUE); // Make character reads non-blocking
+    //box(interact_window, 0, 0);
     
     on_resize();
     
-    u32 scroll_count = 0;
-    let my_calendar = Calendar();
     let now = TimeAndDate::now();
     
-    my_calendar.busy_times.push_back(TimeBlock(
+    calendar_selected_row = now.get_minute_of_day() / 15;
+    calendar_selected_day_of_week = now.get_day_of_week();
+    
+    calendar_scroll_offset = calendar_selected_row - 4;
+    if (calendar_scroll_offset < 0) calendar_scroll_offset = 0;
+    if (calendar_scroll_offset > 96 - (calendar_window_height - 2)) calendar_scroll_offset = 96 - (calendar_window_height - 2);
+    
+    calendar_start_day = now.replace_time(0).add_days(-static_cast<int>(now.get_day_of_week()));
+    
+    calendar.busy_times.push_back(TimeBlock(
+        "Morning event",
         now.replace_time(1 * 60),
         now.replace_time(4 * 60),
         RepeatType::NoRepeat,
         0
     ));
     
-    my_calendar.busy_times.push_back(TimeBlock(
+    calendar.busy_times.push_back(TimeBlock(
+        "Afternoon event",
         now.replace_time(12 * 60),
         now.replace_time(15 * 60),
         RepeatType::Weekly,
         12
     ));
     
-    let start_day = now.add_days(-static_cast<int>(now.get_day_of_week()));
     
-    draw_calendar_week(start_day, my_calendar, scroll_count);
+    draw_calendar_week();
     draw_interactions();
-    u32 displayable_rows = calendar_window_height - 2;
 
     // main calendar controls
     TimeBlock new_time;
@@ -326,49 +525,107 @@ int main() {
         if (character == ERR) {
             if (getmaxy(stdscr) != screen_height || getmaxx(stdscr) != screen_width) {
                 on_resize();
-                
             }
             
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         } else if (character == 'q') {
             break;
         }
         
         switch (character) {
-            case 'k':
-                if (scroll_count <= 24 * 4 + 1 - getmaxy(calendar_window)) {
-                    scroll_count += 1;
-                    draw_calendar_week(start_day, my_calendar, scroll_count);
-                    wrefresh(calendar_window);
+            case 'w':
+                if (calendar_scroll_offset > 0) {
+                    calendar_scroll_offset -= 1;
+                    draw_calendar_week();
                 }
                 break;
-            case 'j':
-                if (scroll_count > 0) {
-                    scroll_count -= 1;
-                    draw_calendar_week(start_day, my_calendar, scroll_count);
-                    wrefresh(calendar_window);
+            case 's':
+                if (calendar_scroll_offset < 96 - (calendar_window_height - 2)) {
+                    calendar_scroll_offset += 1;
+                    draw_calendar_week();
                 }
                 break;
             case 'a':
-                start_day = start_day.add_days(-7);
-                draw_calendar_week(start_day, my_calendar, 0);
-                wrefresh(calendar_window);
+                calendar_start_day = calendar_start_day.add_days(-7);
+                draw_calendar_week();
                 break;
             case 'd':
-                start_day = start_day.add_days(7);
-                draw_calendar_week(start_day, my_calendar, 0);
-                wrefresh(calendar_window);
+                calendar_start_day = calendar_start_day.add_days(7);
+                draw_calendar_week();
+                break;
+            case KEY_UP:
+                if (calendar_selected_row <= 0) {
+                    if (calendar_selected_day_of_week <= 0) {
+                        calendar_start_day = calendar_start_day.add_days(-7);
+                        calendar_selected_day_of_week = 6;
+                    } else {
+                        calendar_selected_day_of_week -= 1;
+                    }
+                    
+                    calendar_selected_row = 95;
+                    calendar_scroll_offset = 96 - (calendar_window_height - 2);
+                } else {
+                    calendar_selected_row -= 1;
+                    if (calendar_selected_row < calendar_scroll_offset) {
+                        calendar_scroll_offset = calendar_selected_row;
+                    } else if (calendar_selected_row >= (calendar_window_height - 2) + calendar_scroll_offset) {
+                        calendar_scroll_offset = calendar_selected_row - (calendar_window_height - 2) + 1;
+                    }
+                }
+                draw_calendar_week();
+                break;
+            case KEY_DOWN:
+                if (calendar_selected_row >= 95) {
+                    if (calendar_selected_day_of_week >= 6) {
+                        calendar_start_day = calendar_start_day.add_days(7);
+                        calendar_selected_day_of_week = 0;
+                    } else {
+                        calendar_selected_day_of_week += 1;
+                    }
+                    
+                    calendar_selected_row = 0;
+                    calendar_scroll_offset = 0;
+                } else {
+                    calendar_selected_row += 1;
+                    if (calendar_selected_row < calendar_scroll_offset) {
+                        calendar_scroll_offset = calendar_selected_row;
+                    } else if (calendar_selected_row >= (calendar_window_height - 2) + calendar_scroll_offset) {
+                        calendar_scroll_offset = calendar_selected_row - (calendar_window_height - 2) + 1;
+                    }
+                }
+                draw_calendar_week();
+                break;
+            case KEY_LEFT:
+                if (calendar_selected_day_of_week <= 0) {
+                    calendar_start_day = calendar_start_day.add_days(-7);
+                    calendar_selected_day_of_week = 6;
+                } else {
+                    calendar_selected_day_of_week -= 1;
+                }
+                draw_calendar_week();
+                break;
+            case KEY_RIGHT:
+                if (calendar_selected_day_of_week >= 6) {
+                    calendar_start_day = calendar_start_day.add_days(7);
+                    calendar_selected_day_of_week = 0;
+                } else {
+                    calendar_selected_day_of_week += 1;
+                }
+                //update_display();
+                draw_calendar_week();
                 break;
             case '1':
                 new_time = run_add_block();
-                my_calendar.add_time(new_time);
-                wrefresh(calendar_window);
+                calendar.add_time(new_time);
+                draw_calendar_week();
                 draw_interactions();
                 break;
             case '2':
-                draw_remove_calendar(my_calendar, 0);
-                draw_remove_interactions(my_calendar);
+                draw_remove_calendar(0);
+                draw_remove_interactions();
                 break;
+            case 'p':
+                printf("%d, %d\n", calendar_selected_row, calendar_selected_day_of_week);
         }
     }
     

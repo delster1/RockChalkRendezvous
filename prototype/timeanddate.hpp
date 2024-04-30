@@ -292,6 +292,33 @@ struct TimeAndDate { // MARK: TimeAndDate
 		return minute_diff;
 	}
 	
+	i32 days_since(const TimeAndDate& t) const {
+		i32 day_diff = this->day - t.day;
+		
+		if (this->minute < t.minute) day_diff -= 1;
+		
+		for (i32 year = t.year; year <= this->year; year++) {
+			day_diff += find_days_in_year(year);
+		}
+		for (i32 year = this->year; year <= t.year; year++) {
+			day_diff -= find_days_in_year(year);
+		}
+		
+		return day_diff;
+	}
+	
+	i32 months_since(const TimeAndDate& t) const {
+		i32 month_diff = (this->year - t.year) * 12 + this->get_month_and_day().month - t.get_month_and_day().month;
+		if (*this < t.add_months(month_diff)) month_diff -= 1;
+		return month_diff;
+	}
+	
+	i32 years_since(const TimeAndDate& t) const {
+		i32 year_diff = this->year - t.year;
+		if (*this < t.add_years(year_diff)) year_diff -= 1;
+		return year_diff;
+	}
+	
 	
 	TimeAndDate replace_time(const i32 minutes) const {
 		return TimeAndDate::build(minutes, this->day, this->year);
