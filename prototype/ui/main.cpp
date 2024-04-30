@@ -6,8 +6,8 @@
 #include <tuple>
 #include <ncurses.h>
 
-#include "../timeanddate.hpp"
-#include "../calendar.hpp"
+#include "../../src/shared/timeanddate.hpp"
+#include "../../src/shared/calendar.hpp"
 
 
 enum UIState {
@@ -47,7 +47,6 @@ static i32 calendar_selected_row, calendar_selected_day_of_week;
 static u32 list_scroll_height = 0;
 static i32 list_scroll_offset = 0;
 static i32 list_selected_index = 0;
-//static bool list_local = true;
 
 static TimeAndDate new_start_time, new_end_time;
 static RepeatType new_repeat_type;
@@ -706,7 +705,6 @@ int main() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
-                    //case ViewingList:
                         calendar_start_day = calendar_start_day.add_days(-7);
                         redraw = true; break;
                 } break;
@@ -716,7 +714,6 @@ int main() {
                     case AddingStart:
                     case AddingEnd:
                     case AddingRepeatCount:
-                    //case ViewingList:
                         calendar_start_day = calendar_start_day.add_days(7);
                         redraw = true; break;
                     case AddingRepeatType:
