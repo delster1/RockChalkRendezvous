@@ -23,26 +23,7 @@ static MenuOption MenuState;
 static WINDOW* menu_window;
 static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
 
-void draw_group_interactions_window() {
-    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
-    
-    switch (MenuState) {
-        case InMenu:
-            draw_menu_choice_window();
-            break;
-        case ViewingCalendars:
-            // this will be where a user selects a group's calendar to view
-            break;
-        case ViewingGroups:
-            // set active_group to request for get_groups[0]
-            // set set group_calendars to get_groups fn.
 
-            break;
-        case EditingGroups:
-            // this is where I'll display editing menu choices to edit a users groups
-            break;
-    }
-}
 
 MenuOption draw_menu_choice_window() {
     const int num_choices = sizeof(menu_choices) / sizeof(menu_choices[0]);
@@ -82,6 +63,27 @@ MenuOption draw_menu_choice_window() {
             case '\n': // User made a selection
                 return static_cast<MenuOption>(current_selection + 1);
         }
+    }
+}
+
+void draw_group_interactions_window() {
+    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
+    
+    switch (MenuState) {
+        case InMenu:
+            draw_menu_choice_window();
+            break;
+        case ViewingCalendars:
+            // this will be where a user selects a group's calendar to view
+            break;
+        case ViewingGroups:
+            // set active_group to request for get_groups[0]
+            // set set group_calendars to get_groups fn.
+
+            break;
+        case EditingGroups:
+            // this is where I'll display editing menu choices to edit a users groups
+            break;
     }
 }
 void update_menu_screen() {
