@@ -120,6 +120,13 @@ Status leave_group(std::unordered_map<GroupID, Group>& groups, User& user, const
 	return Success;
 }
 
+void save_groups(const std::unordered_map<GroupID, Group>& groups) {
+	let groups_file_out = std::ofstream(GROUPS_FILE_NAME);
+	for (const std::pair<const GroupID, Group>& pair : groups) {
+		groups_file_out << pair.second.encode() << "\n";
+	}
+	groups_file_out.close();
+}
 
 
 // MARK: Main
@@ -334,6 +341,9 @@ int main() {
 		
 		r.user.group_ids.push_back(id);
 		save_user_file(r.user);
+	    
+        // save groups to file
+        save_groups(groups);
 		
 		return_code(GroupCreated);
 	});
@@ -369,6 +379,9 @@ int main() {
 		r.user.group_ids.push_back(id);
 		save_user_file(r.user);
 		
+        // save groups to file
+        save_groups(groups);
+
 		return_code(GroupJoined);
 	});
 	
@@ -404,6 +417,9 @@ int main() {
 		}
 		
 		pair_ptr->second.name = name;
+    
+        // save groups to file
+        save_groups(groups);
 		
 		return_code(GroupRenamed);
 	});
@@ -421,6 +437,9 @@ int main() {
 		if (decode_group_id(message, id) == Failure) return_code(BadData);
 		
 		if (leave_group(groups, r.user, id) == Failure) return_code(InvalidGroup);
+    
+        // save groups to file
+        save_groups(groups);
 		
 		save_user_file(r.user);
 		return_code(GroupLeft);
@@ -477,12 +496,8 @@ int main() {
 	}
 	
 	// save groups to file
+    save_groups(groups);
 	    
-	let groups_file_out = std::ofstream(GROUPS_FILE_NAME);
-	for (const std::pair<const GroupID, Group>& pair : groups) {
-		groups_file_out << pair.second.encode() << "\n";
-	}
-	groups_file_out.close();
 	
 	server.stop();
 	http_thread.join();
