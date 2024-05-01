@@ -27,10 +27,10 @@ int main() {
 
     MenuState= MenuOption::InMenu; // Assuming MenuState and MenuOption are defined
     int ch;
-    draw_menu_choice_window();
+    update_menu_screen();
     while ((ch = wgetch(menu_window)) != 'q') { // Update to exit on 'q' key press
 
-        draw_menu_choice_window(); // Needs implementation to handle menu interactions
+        update_menu_screen(); // Needs implementation to handle menu interactions
     }
 
     // Clean up

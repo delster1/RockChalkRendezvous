@@ -27,22 +27,6 @@ void prompt_username();
 void prompt_password();
 void get_username_and_password();
 void draw_login_window();
-// LoginOption attempt_login(const char* username, const char* password) {
-//     if (/* login successful */) {
-//         return SUCCESS;
-//     } else {
-//         return Failure;
-//     }
-// }
-
-// // Attempt registration and return success or failure
-// LoginOption attempt_register(const char* username, const char* password) {
-//     if (/* registration successful */) {
-//         return SUCCESS;
-//     } else {
-//         return Failure;
-//     }
-// }
 
 // create a new window with defined x, y, width, and height
 WINDOW* create_window(int height, int width, int start_y, int start_x) {

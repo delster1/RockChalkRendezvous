@@ -3,6 +3,7 @@
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
+#include "calendar_editor.cpp"
 #include <string.h>
 #include <vector>
 #include <algorithm>
@@ -12,10 +13,10 @@
 #include <iostream>
 
 enum MenuOption {
-    InMenu,
-    ViewingCalendar,
-    ViewingGroups,
-    EditingGroups,    
+    InMenu,     // This includes being in the menu, viewing options to change to the state below
+    ViewingCalendars,    // This includes viewing/editing a user's calendar
+    ViewingGroups,      // This includes viewing group calendars and selecting a group calendar to view
+    EditingGroups,      // This includes editing a group - join group, create group, leave group
 };
 
 static MenuOption MenuState;
@@ -23,7 +24,7 @@ static WINDOW* menu_window;
 static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
 
 
-void draw_menu_choice_window() {
+MenuOption draw_menu_choice_window() {
     const int num_choices = sizeof(menu_choices) / sizeof(menu_choices[0]);
     int current_selection = 0;
     int ch;
@@ -59,9 +60,24 @@ void draw_menu_choice_window() {
                 }
                 break;
             case '\n': // User made a selection
-                return;
+                return static_cast<MenuOption>(current_selection + 1);
         }
     }
-
 }
+void update_menu_screen() {
+    switch (MenuState) {
+        case InMenu:
+            MenuState = draw_menu_choice_window();
+            break;
+        case ViewingCalendars:
+            wclear(menu_window);
+            transfer_to_calendar_editor();
+            break;
+        case ViewingGroups: 
+            break;
+        case EditingGroups:
+            break;
+    }
+}
+
 #endif
