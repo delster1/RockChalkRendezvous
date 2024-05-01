@@ -6,6 +6,7 @@
 #include "../shared/group.hpp"
 #include "login.hpp"
 #include "calendar_editor.cpp"
+#include "client.hpp"
 #include <string.h>
 #include <vector>
 #include <algorithm>
@@ -244,18 +245,18 @@ void draw_groups_create_window() {
     noecho();
     mvwprintw(menu_window, 3, 1, "User: %s", username);
     mvwprintw(menu_window, 4, 1, "Group Name: %s", group_name);
-    // Status created_group =  send_create_group_request(username, group_name_string);
-    // if (created_group == Failure) {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "FAILED TO CREATE GROUP");
-    // } else {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY CREATED GROUP");
+    Status created_group =  send_create_group_request(group_name_string);
+    if (created_group == Failure) {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "FAILED TO CREATE GROUP");
+    } else {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "SUCCESSFULLY CREATED GROUP");
         
-    // }
-    // wrefresh(menu_window);
-    // napms(2000);
-    // MenuState = MenuOption::InMenu;
+    }
+    wrefresh(menu_window);
+    napms(2000);
+    MenuState = MenuOption::InMenu;
 }
 
 // JoinGroup(user, group_id)
@@ -268,19 +269,19 @@ void draw_groups_join_window() {
     mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
     mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
 
-    // send_join_group_request(group_id);
-    // Status joined_group =  send_join_group_request(group_id);
-    // if (joined_group == Failure) {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "FAILED TO JOIN GROUP");
-    // } else {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY JOINED GROUP");
+    send_join_group_request(selected_group_id);
+    Status joined_group =  send_join_group_request(selected_group_id);
+    if (joined_group == Failure) {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "FAILED TO JOIN GROUP");
+    } else {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "SUCCESSFULLY JOINED GROUP");
         
-    // }
-    // wrefresh(menu_window);
-    // napms(2000);
-    // MenuState = MenuOption::InMenu;
+    }
+    wrefresh(menu_window);
+    napms(2000);
+    MenuState = MenuOption::InMenu;
 }
 // LeaveGroup(user, group_id)
 void draw_groups_leave_window() {
@@ -291,19 +292,19 @@ void draw_groups_leave_window() {
     mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
     mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
 
-    // send_leave_group_request(group_id);
-    // Status LEFT_group =  send_leave_group_request(group_id);
-    // if (LEFT_group == Failure) {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "FAILED TO leave GROUP");
-    // } else {
-    //     wclear(menu_window);
-    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY LEFT GROUP");
+    send_leave_group_request(selected_group_id);
+    Status left_group =  send_leave_group_request(selected_group_id);
+    if (left_group == Failure) {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "FAILED TO leave GROUP");
+    } else {
+        wclear(menu_window);
+        mvwprintw(menu_window, 1, 1, "SUCCESSFULLY LEFT GROUP");
         
-    // }
-    // wrefresh(menu_window);
-    // napms(2000);
-    // MenuState = MenuOption::InMenu;
+    }
+    wrefresh(menu_window);
+    napms(2000);
+    MenuState = MenuOption::InMenu;
 }
 // GetGroups(user) -> get encoded groups
 void draw_groups_get_window() {

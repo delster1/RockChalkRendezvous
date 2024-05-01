@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
-#include "client.cpp"
+#include "client.hpp"
 #include "httplib.h"
 #include <iostream>
 enum LoginOption {
