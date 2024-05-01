@@ -72,8 +72,12 @@ void update_menu_screen() {
         case ViewingCalendars:
             wclear(menu_window);
             transfer_to_calendar_editor();
+            MenuState = MenuOption::InMenu;
             break;
         case ViewingGroups: 
+            wclear(menu_window);
+            transfer_to_group_calendar_view();
+            MenuState = MenuOption::InMenu;
             break;
         case EditingGroups:
             break;
