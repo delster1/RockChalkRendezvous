@@ -20,18 +20,10 @@ enum MenuOption {
     EditingGroups,      // This includes editing a group - join group, create group, leave group
 };
 
-enum GroupEditOption {
-    CreateGroup,
-    JoinGroup,
-    LeaveGroup,
-    RenameGroup,
-    GetGroups,
-
-};
 static MenuOption MenuState;
-static GroupEditOption GroupEditState;
 static WINDOW* menu_window;
 static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
+void draw_edit_groups_window();
 void draw_groups_create_window();
 
 MenuOption draw_menu_choice_window() {
@@ -85,14 +77,20 @@ void draw_group_interactions_window() {
             break;
             
         case ViewingGroups: // this will be where a user selects a group's calendar to view
+            
+            transfer_to_group_calendar_view();
+            // set active_group to request for get_groups[0]
+            // set set group_calendars to get_groups fn.
+
+            break;
         case EditingGroups:
             draw_edit_groups_window();
             // this is where I'll display editing menu choices to edit a users groups
             break;
     }
 }
-// TODO: change the order of how this works! - we will choose a group, then choose to edit it or draw it's calendar
-GroupEditOption draw_edit_groups_window() {
+
+void draw_edit_groups_window() {
     static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
     const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
     int current_selection = 0;
@@ -138,11 +136,28 @@ GroupEditOption draw_edit_groups_window() {
         }
     }
     wclear(menu_window);
-    return static_cast<GroupEditOption>(current_selection);
-    
-}
 
-void run_group_interaction() {
+    switch (current_selection){
+        case 0:
+            draw_groups_create_window();
+            break;
+        case 1:
+            mvwprintw(menu_window, 1, 1, "JOIN GROUP");
+            break;
+        case 2:
+            mvwprintw(menu_window, 1, 1, "LEAVE GROUP");
+            break;
+        case 3:
+            mvwprintw(menu_window, 1, 1, "RENAME GROUP");
+            break;
+        case 4:
+            mvwprintw(menu_window, 1, 1, "VIEW GROUP");
+            break;
+    }
+    wrefresh(menu_window);
+
+    napms(3000);
+    wclear(menu_window);
 
 }
 // TODO - create catchall function that iterates through groups and can return whatever is needed dependent on selection
@@ -160,9 +175,7 @@ void draw_groups_create_window() {
     // send_create_group_request(username, group_name_string);
 }
 // JoinGroup(user, group_id)
-void draw_groups_join_window() {
-    
-}
+void draw_groups_join_window() {}
 // LeaveGroup(user, group_id)
 void draw_groups_leave_window() {}
 // GetGroups(user) -> get encoded groups
