@@ -9,7 +9,7 @@ void transfer_to_calendar_editor();
 
 // Set these before calling transfer_to_group_calendar_view
 static std::string active_group_name;
-static std::vector<std::tuple<std::string, Calendar>> group_calendars;
+static std::vector<std::tuple<std::string, Calendar>> group_calendars; // vec of group_name and calendar?
 void transfer_to_group_calendar_view();
 
 #endif

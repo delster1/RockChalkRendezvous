@@ -29,7 +29,12 @@ void draw_edit_groups_window();
 void draw_groups_create_window();
 void draw_groups_join_window();
 void run_edit_group_selection(int selection);
+void get_current_user_groups();
 static Group current_group;
+static std::vector<Group> current_groups;
+static std::vector<std::tuple<std::string, Calendar>> current_group_calendars;
+
+void decode_group_calendars(std::string request_output);
 Group draw_groups_list();
 void draw_groups_leave_window();
 MenuOption draw_menu_choice_window() {
@@ -74,7 +79,8 @@ MenuOption draw_menu_choice_window() {
 }
 
 void draw_group_interactions_window() {
-    
+    current_groups.clear();
+    get_current_user_groups();
     switch (MenuState) {
         case InMenu:
             draw_menu_choice_window();
@@ -84,8 +90,7 @@ void draw_group_interactions_window() {
             
         case ViewingGroups: // this will be where a user selects a group's calendar to view
             current_group = draw_groups_list();
-            active_group_name = current_group.name;
-            // active_group_calendars = get_group_calendars(active_group_name);
+            // decode_group_calendars(send_get_groups_request());
             transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
             // set set group_calendars to get_groups fn.
@@ -98,6 +103,38 @@ void draw_group_interactions_window() {
     }
 }
 
+void decode_groups(std::string request_output) {
+    wclear(menu_window);
+    std::istringstream iss(request_output);
+    std::string groups_to_decode;
+    std::string test;
+    int num_groups;
+    iss >> num_groups;
+    mvwprintw(menu_window, 3, 2, "READ LINE: %d" , num_groups);
+
+
+    wrefresh(menu_window);
+    napms(2000); // Wait for 2 seconds (for visibility in demonstration)
+    wgetch(menu_window);
+    // Fix: Call the decode_vector function with the correct arguments
+}
+
+void get_current_user_group_calendars(){
+    std::string request_output = send_get_group_calendars_request(current_group.id);
+    mvwprintw(menu_window, 5, 2, request_output.c_str());
+    std::istringstream iss(request_output);
+    std::string groups_to_decode;
+    // decode_vector<std::tuple<std::string, Calendar>>(iss, current_group_calendars, &Group::decode_static);
+    wrefresh(menu_window);
+}
+
+void get_current_user_groups() {
+    std::string request_output = send_get_groups_request();
+    std::istringstream iss(request_output);
+    std::string groups_to_decode;
+    decode_vector<Group>(iss, current_groups, Group::decode_static);
+    wrefresh(menu_window);
+}
 void draw_edit_groups_window() {
     static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
     const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
@@ -154,6 +191,7 @@ void draw_edit_groups_window() {
 }
 
 void run_edit_group_selection(int current_selection){
+
     switch (current_selection){
         case 0:
             draw_groups_create_window();
@@ -168,31 +206,20 @@ void run_edit_group_selection(int current_selection){
             mvwprintw(menu_window, 1, 1, "RENAME GROUP");
             break;
         case 4:
+
             mvwprintw(menu_window, 1, 1, "VIEW GROUP");
             break;
     }
 }
 Group draw_groups_list() {
-    std::vector<Group> test_groups = {
-        Group(1, "Research Team", {"Alice", "Bob", "Charlie"}),
-        Group(2, "Development Squad", {"Dave", "Eve", "Frank"}),
-        Group(3, "QA Engineers", {"Grace", "Heidi", "Ivan"})
-    };
-    std::vector<std::string> group_names;
     std::vector<usize> group_ids;
+    std::vector<std::string> group_names;
 
-    for (const auto& group : test_groups) {
-
-        group_names.push_back(group.name);
-        group_ids.push_back(group.id);
-    }
-
-    int num_groups = test_groups.size();
+    int num_groups = current_groups.size();
     int current_selection = 0;
     int ch;
     keypad(menu_window, TRUE); // Enable keyboard input for the menu_windowdow
     noecho();          // Don't echo the pressed keys to the menu_windowdow
-    mvwprintw(menu_window, 0, 0, "%s", Group::encode_static(test_groups[0]));
     wrefresh(menu_window);
 
     bool not_chosen = true;
@@ -204,8 +231,8 @@ Group draw_groups_list() {
                 wattron(menu_window, A_REVERSE);  // Highlight the selected choice
             }
             // Safeguard against potential out-of-bounds or corrupted strings - cgpt
-            std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
-            mvwprintw(menu_window, i + 1, 1, "%s", safe_display_name.c_str());
+            // std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
+            mvwprintw(menu_window, i + 1, 1, "%s", current_groups[i].name.c_str());
             if (i == current_selection) {
                 wattroff(menu_window, A_REVERSE);
             }
@@ -233,7 +260,7 @@ Group draw_groups_list() {
         }
     }
     wclear(menu_window);
-    return test_groups[current_selection];
+    return current_groups[current_selection];
 }
 // TODO - create catchall function that iterates through groups and can return whatever is needed dependent on selection
 // CreateGroup(user, group_name)
