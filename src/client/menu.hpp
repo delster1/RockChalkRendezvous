@@ -3,6 +3,7 @@
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
+#include "../shared/group.hpp"
 #include "login.hpp"
 #include "calendar_editor.cpp"
 #include <string.h>
@@ -25,7 +26,10 @@ static WINDOW* menu_window;
 static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
 void draw_edit_groups_window();
 void draw_groups_create_window();
-
+void draw_groups_join_window();
+void run_edit_group_selection(int selection);
+static Group current_group;
+Group draw_groups_list();
 MenuOption draw_menu_choice_window() {
     const int num_choices = sizeof(menu_choices) / sizeof(menu_choices[0]);
     int current_selection = 0;
@@ -77,7 +81,9 @@ void draw_group_interactions_window() {
             break;
             
         case ViewingGroups: // this will be where a user selects a group's calendar to view
-            
+            current_group = draw_groups_list();
+            active_group_name = current_group.name;
+            // active_group_calendars = get_group_calendars(active_group_name);
             transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
             // set set group_calendars to get_groups fn.
@@ -136,13 +142,22 @@ void draw_edit_groups_window() {
         }
     }
     wclear(menu_window);
+    run_edit_group_selection(current_selection);
+    
+    wrefresh(menu_window);
 
+    napms(3000);
+    wclear(menu_window);
+
+}
+
+void run_edit_group_selection(int current_selection){
     switch (current_selection){
         case 0:
             draw_groups_create_window();
             break;
         case 1:
-            mvwprintw(menu_window, 1, 1, "JOIN GROUP");
+            draw_groups_join_window();
             break;
         case 2:
             mvwprintw(menu_window, 1, 1, "LEAVE GROUP");
@@ -154,11 +169,69 @@ void draw_edit_groups_window() {
             mvwprintw(menu_window, 1, 1, "VIEW GROUP");
             break;
     }
+}
+Group draw_groups_list() {
+    std::vector<Group> test_groups = {
+        Group(1, "Research Team", {"Alice", "Bob", "Charlie"}),
+        Group(2, "Development Squad", {"Dave", "Eve", "Frank"}),
+        Group(3, "QA Engineers", {"Grace", "Heidi", "Ivan"})
+    };
+    std::vector<std::string> group_names;
+    std::vector<usize> group_ids;
+
+    for (const auto& group : test_groups) {
+
+        group_names.push_back(group.name);
+        group_ids.push_back(group.id);
+    }
+
+    int num_groups = test_groups.size();
+    int current_selection = 0;
+    int ch;
+    keypad(menu_window, TRUE); // Enable keyboard input for the menu_windowdow
+    noecho();          // Don't echo the pressed keys to the menu_windowdow
+    mvwprintw(menu_window, 0, 0, "%s", Group::encode_static(test_groups[0]));
     wrefresh(menu_window);
 
-    napms(3000);
-    wclear(menu_window);
+    bool not_chosen = true;
+    while (not_chosen ) {
+        // character = wgetch(interact_window);
 
+        for (int i = 0; i < num_groups; ++i) {
+            if (i == current_selection) {
+                wattron(menu_window, A_REVERSE);  // Highlight the selected choice
+            }
+            // Safeguard against potential out-of-bounds or corrupted strings - cgpt
+            std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
+            mvwprintw(menu_window, i + 1, 1, "%s", safe_display_name.c_str());
+            if (i == current_selection) {
+                wattroff(menu_window, A_REVERSE);
+            }
+        }
+        wrefresh(menu_window);
+
+        ch = wgetch(menu_window); // Get user input
+
+        switch (ch) {
+            case KEY_UP:
+            case 'k': // Move selection up
+                if (--current_selection < 0) {
+                    current_selection = num_groups - 1;
+                }
+                break;
+            case KEY_DOWN:
+            case 'j': // Move selection down
+                if (++current_selection >= num_groups) {
+                    current_selection = 0;
+                }
+                break;
+            case '\n': // User made a selection
+                not_chosen = false;
+                break;
+        }
+    }
+    wclear(menu_window);
+    return test_groups[current_selection];
 }
 // TODO - create catchall function that iterates through groups and can return whatever is needed dependent on selection
 // CreateGroup(user, group_name)
@@ -171,15 +244,79 @@ void draw_groups_create_window() {
     noecho();
     mvwprintw(menu_window, 3, 1, "User: %s", username);
     mvwprintw(menu_window, 4, 1, "Group Name: %s", group_name);
-    return;
-    // send_create_group_request(username, group_name_string);
+    // Status created_group =  send_create_group_request(username, group_name_string);
+    // if (created_group == Failure) {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "FAILED TO CREATE GROUP");
+    // } else {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY CREATED GROUP");
+        
+    // }
+    // wrefresh(menu_window);
+    // napms(2000);
+    // MenuState = MenuOption::InMenu;
 }
+
 // JoinGroup(user, group_id)
-void draw_groups_join_window() {}
+void draw_groups_join_window() {
+    Group selected_group = draw_groups_list();
+
+    usize selected_group_id = selected_group.id;
+    std::string selected_group_name = selected_group.name;
+    wclear(menu_window);
+    mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
+    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
+
+    // send_join_group_request(group_id);
+    // Status joined_group =  send_join_group_request(group_id);
+    // if (joined_group == Failure) {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "FAILED TO JOIN GROUP");
+    // } else {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY JOINED GROUP");
+        
+    // }
+    // wrefresh(menu_window);
+    // napms(2000);
+    // MenuState = MenuOption::InMenu;
+}
 // LeaveGroup(user, group_id)
-void draw_groups_leave_window() {}
+void draw_groups_leave_window() {
+    Group selected_group = draw_groups_list();
+    usize selected_group_id = selected_group.id;
+    std::string selected_group_name = selected_group.name;
+    wclear(menu_window);
+    mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
+    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
+
+    // send_leave_group_request(group_id);
+    // Status LEFT_group =  send_leave_group_request(group_id);
+    // if (LEFT_group == Failure) {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "FAILED TO leave GROUP");
+    // } else {
+    //     wclear(menu_window);
+    //     mvwprintw(menu_window, 1, 1, "SUCCESSFULLY LEFT GROUP");
+        
+    // }
+    // wrefresh(menu_window);
+    // napms(2000);
+    // MenuState = MenuOption::InMenu;
+}
 // GetGroups(user) -> get encoded groups
-void draw_groups_get_window() {}
+void draw_groups_get_window() {
+    Group selected_group = draw_groups_list();
+    usize selected_group_id = selected_group.id;
+    std::string selected_group_name = selected_group.name;
+    wclear(menu_window);
+    mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
+    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
+
+    // THIS WHERE USERS WILL CHOOSE WHICH GROUP CALENDAR TO VIEW
+}
+
 
 
 void update_menu_screen() {
