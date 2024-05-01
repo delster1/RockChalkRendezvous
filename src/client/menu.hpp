@@ -31,6 +31,7 @@ void draw_groups_join_window();
 void run_edit_group_selection(int selection);
 static Group current_group;
 Group draw_groups_list();
+void draw_groups_leave_window();
 MenuOption draw_menu_choice_window() {
     const int num_choices = sizeof(menu_choices) / sizeof(menu_choices[0]);
     int current_selection = 0;
@@ -161,7 +162,7 @@ void run_edit_group_selection(int current_selection){
             draw_groups_join_window();
             break;
         case 2:
-            mvwprintw(menu_window, 1, 1, "LEAVE GROUP");
+            draw_groups_leave_window();
             break;
         case 3:
             mvwprintw(menu_window, 1, 1, "RENAME GROUP");

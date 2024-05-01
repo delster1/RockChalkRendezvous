@@ -285,7 +285,7 @@ Status send_create_group_request(const std::string& group_name) {
         char response_code;
         response_stream >> response_code;
         if (response_stream.fail()) return Failure;
-		if (response_code == AccountOk) {
+		if (response_code == GroupCreated) {
 			return Success;
 		}
     } else {
@@ -310,7 +310,7 @@ Status send_join_group_request(const usize group_id) {
         char response_code;
         response_stream >> response_code;
         if (response_stream.fail()) return Failure;
-		if (response_code == AccountOk) {
+		if (response_code == GroupJoined) {
 			return Success;
 		}
     } else {
@@ -336,7 +336,7 @@ Status send_rename_group_request(const usize group_id, const std::string& group_
         char response_code;
         response_stream >> response_code;
         if (response_stream.fail()) return Failure;
-		if (response_code == AccountOk) {
+		if (response_code == GroupRenamed) {
 			return Success;
 		}
     } else {
@@ -361,7 +361,7 @@ Status send_leave_group_request(const usize group_id) {
         char response_code;
         response_stream >> response_code;
         if (response_stream.fail()) return Failure;
-		if (response_code == AccountOk) {
+		if (response_code == GroupLeft) {
 			return Success;
 		}
     } else {
