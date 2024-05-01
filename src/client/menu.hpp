@@ -329,6 +329,7 @@ void update_menu_screen() {
         case ViewingCalendars:
             wclear(menu_window);
             transfer_to_calendar_editor();
+            send_set_user_calendar_request(calendar.encode());
             MenuState = MenuOption::InMenu;
             break;
         case ViewingGroups: 
