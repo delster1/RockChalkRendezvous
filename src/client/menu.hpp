@@ -29,8 +29,8 @@ void draw_menu_choice_window() {
     int ch;
     keypad(menu_window, TRUE); // Enable keyboard input for the menu_windowdow
     noecho();          // Don't echo the pressed keys to the menu_windowdow
-    mvwprintw(menu_window, 0, 0, "Choose how one:");
-
+    mvwprintw(menu_window, 0, 0, "Choose one:");
+    wrefresh(menu_window);
     while (true) {
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
