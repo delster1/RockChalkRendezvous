@@ -275,9 +275,8 @@ std::string send_get_group_calendars_request(const usize group_id) {
     return "Failure";
 }
 
-Status send_create_group_request(const usize group_id) { 
-    std::string group_id_string = encode_group_id(group_id);
-    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id_string);
+Status send_create_group_request(const std::string& group_name) { 
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_name);
     auto res = my_client->Post("/create_group", body, "text/plain");
 
     // Check the response
