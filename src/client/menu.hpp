@@ -22,7 +22,7 @@ enum MenuOption {
 static MenuOption MenuState;
 static WINDOW* menu_window;
 static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
-
+void draw_edit_groups_window();
 
 
 MenuOption draw_menu_choice_window() {
@@ -67,39 +67,119 @@ MenuOption draw_menu_choice_window() {
 }
 
 void draw_group_interactions_window() {
-    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
     
     switch (MenuState) {
         case InMenu:
             draw_menu_choice_window();
             break;
-        case ViewingCalendars:
-            transfer_to_calendar_editor();
-            // this will be where a user selects a group's calendar to view
+        case ViewingCalendars: // this is invalid, it shouldn't run when the state is ViewingCalendars
             break;
-        case ViewingGroups:
+            
+        case ViewingGroups: // this will be where a user selects a group's calendar to view
+            
             transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
             // set set group_calendars to get_groups fn.
 
             break;
         case EditingGroups:
+            draw_edit_groups_window();
             // this is where I'll display editing menu choices to edit a users groups
             break;
     }
 }
+
+void draw_edit_groups_window() {
+    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
+    const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
+    int current_selection = 0;
+    int ch;
+    keypad(menu_window, TRUE); // Enable keyboard input for the menu_windowdow
+    noecho();          // Don't echo the pressed keys to the menu_windowdow
+    mvwprintw(menu_window, 0, 0, "Choose one:");
+    wrefresh(menu_window);
+    // int character;
+    bool not_chosen = true;
+    while (not_chosen ) {
+        // character = wgetch(interact_window);
+
+        for (int i = 0; i < num_choices; ++i) {
+            if (i == current_selection) {
+                wattron(menu_window, A_REVERSE);  // Highlight the selected choice
+            }
+            mvwprintw(menu_window, i + 1, 1, "%s", editing_menu_choices[i]);
+            if (i == current_selection) {
+                wattroff(menu_window, A_REVERSE);
+            }
+        }
+        wrefresh(menu_window);
+
+        ch = wgetch(menu_window); // Get user input
+
+        switch (ch) {
+            case KEY_UP:
+            case 'k': // Move selection up
+                if (--current_selection < 0) {
+                    current_selection = num_choices - 1;
+                }
+                break;
+            case KEY_DOWN:
+            case 'j': // Move selection down
+                if (++current_selection >= num_choices) {
+                    current_selection = 0;
+                }
+                break;
+            case '\n': // User made a selection
+                not_chosen = false;
+                break;
+        }
+    }
+    switch (current_selection){
+        case 0:
+            wclear(menu_window);
+            mvwprintw(menu_window, 1, 1, "CREATE GROUP");
+            wrefresh(menu_window);
+            break;
+        case 1:
+            wclear(menu_window);
+            mvwprintw(menu_window, 1, 1, "JOIN GROUP");
+            wrefresh(menu_window);
+            break;
+        case 2:
+            wclear(menu_window);
+            mvwprintw(menu_window, 1, 1, "LEAVE GROUP");
+            wrefresh(menu_window);
+            break;
+        case 3:
+            wclear(menu_window);
+            mvwprintw(menu_window, 1, 1, "RENAME GROUP");
+            wrefresh(menu_window);
+            break;
+        case 4:
+            wclear(menu_window);
+            mvwprintw(menu_window, 1, 1, "VIEW GROUP");
+            wrefresh(menu_window);
+            break;
+    }
+    napms(3000);
+
+}
+
 void update_menu_screen() {
     switch (MenuState) {
         case InMenu:
             MenuState = draw_menu_choice_window();
             break;
         case ViewingCalendars:
+            wclear(menu_window);
+            transfer_to_calendar_editor();
+            MenuState = MenuOption::InMenu;
+            break;
         case ViewingGroups: 
+        case EditingGroups:
             wclear(menu_window);
             draw_group_interactions_window();
             MenuState = MenuOption::InMenu;
-            break;
-        case EditingGroups:
             break;
     }
 }
