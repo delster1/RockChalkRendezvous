@@ -193,11 +193,10 @@ std::string send_get_user_calendar_request() {
     return "Failure";
 }
 
-Status send_set_user_calendar_request() {
+Status send_set_user_calendar_request(const std::string encoded_calendar) {
     // Quote the username_string and password_string to ensure they are transmitted in a format the server expects.
-
     // Prepare the body of the POST request
-    std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + encoded_calendar;
 
     // Make a POST request
     auto res = my_client->Post("/set_user_calendar", body, "text/plain");

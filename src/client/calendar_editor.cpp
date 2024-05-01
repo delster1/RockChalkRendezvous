@@ -225,6 +225,7 @@ void draw_group_calendar_week() {
     TimeAndDate end_day = calendar_start_day.add_days(7);
     
     u32 counts[7][96] = {{ 0 }};
+    u32 max = group_calendars.size();
     
     for (const auto& pair : group_calendars) {
         const std::string& user_name = std::get<0>(pair);
@@ -255,7 +256,7 @@ void draw_group_calendar_week() {
     for (u32 day_of_week = 0; day_of_week < 7; day_of_week++) {
         u32 x = calendar_time_margin + 1 + day_of_week * (calendar_day_width + 1);
         for (u32 row = 2; row < calendar_window_height; row++) {
-            u32 color_id = get_group_color_map(counts[day_of_week][row + calendar_scroll_offset - 2]);
+            u32 color_id = get_group_color_map(max - counts[day_of_week][row + calendar_scroll_offset - 2]);
             if (color_id < 8 && (row == calendar_selected_row - calendar_scroll_offset + 2) && (day_of_week == calendar_selected_day_of_week)) color_id += 8;
             wattron(calendar_window, COLOR_PAIR(color_id));
             mvwprintw(calendar_window, row, x, "%s", std::string(calendar_day_width, '#').c_str());
