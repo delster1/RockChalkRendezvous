@@ -222,6 +222,153 @@ Status send_set_user_calendar_request() {
     return Failure;
 
 }
+
+Status send_get_groups_request() {
+    std::string body = quote_string(username_string);
+    auto res = my_client->Post("/get_groups", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+Status send_get_group_calendars_request(const std::string& group_id) { 
+    std::string body = quote_string(group_id);
+    auto res = my_client->Post("/get_group_calendars", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+Status send_create_group_request(const std::string& group_id) { 
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id);
+    auto res = my_client->Post("/create_group", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+Status send_join_group_request(const std::string& group_id) { 
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id);
+    auto res = my_client->Post("/join_group", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+Status send_rename_group_request(const std::string& group_id, const std::string& group_name) { 
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id);
+    body += "\n" + quote_string(group_name);
+    auto res = my_client->Post("/rename_group", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+Status send_leave_group_request(const std::string& group_id) { 
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id);
+    auto res = my_client->Post("/leave_group", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+
+    return Failure;
+}
+
+
 	// For decoding groups to vector, use decoxde_vector<Group>
 
 // Status send_set_calendar_request(httplib::Client* client,std::string std::string decoded_user){
