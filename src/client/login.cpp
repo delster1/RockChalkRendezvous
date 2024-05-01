@@ -15,14 +15,13 @@ int main() {
     
     // Ensure the window is clear at start
     wclear(login_window);
-    mvwprintw(login_window, 1, 1, "TEST"); // Initial message
     wrefresh(login_window); // Refresh to show initial state
 
     LoginState = LoginOption::Unauthorized; // Start state
 
     int character;
     while (true) { // Loop until 'q' is pressed
-        update_screen();
+        update_login_screen();
     }
 
     destroy_window(login_window);

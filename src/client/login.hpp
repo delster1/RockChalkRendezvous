@@ -1,3 +1,5 @@
+#ifndef RCR_LOGIN_FILE_CLIENT
+#define RCR_LOGIN_FILE_CLIENT
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
@@ -6,7 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
-#include "client.cpp"
+#include "client.hpp"
 #include "httplib.h"
 #include <iostream>
 enum LoginOption {
@@ -25,22 +27,6 @@ void prompt_username();
 void prompt_password();
 void get_username_and_password();
 void draw_login_window();
-// LoginOption attempt_login(const char* username, const char* password) {
-//     if (/* login successful */) {
-//         return SUCCESS;
-//     } else {
-//         return Failure;
-//     }
-// }
-
-// // Attempt registration and return success or failure
-// LoginOption attempt_register(const char* username, const char* password) {
-//     if (/* registration successful */) {
-//         return SUCCESS;
-//     } else {
-//         return Failure;
-//     }
-// }
 
 // create a new window with defined x, y, width, and height
 WINDOW* create_window(int height, int width, int start_y, int start_x) {
@@ -125,16 +111,18 @@ Status draw_account_auth_window() {
     wrefresh(login_window);
     napms(1000);
     httplib::Client* my_client = build_client();
+    username_string = username;
+    password_string = password;
     Status authorization_result = Failure;
     switch (LoginState) {
         case LoggingIn:
             // THis is where I'll send login requests
             // another_function(iss);
-            authorization_result = send_login_request(my_client, username, password);
+            authorization_result = send_login_request();
             break;
         case Registering:
             // This is where I'll send register requests 
-            authorization_result = send_create_account_request(my_client, username, password);
+            authorization_result = send_create_account_request();
             break;
     }
     switch (authorization_result){
@@ -199,7 +187,7 @@ void get_username_and_password(){
     }
 }
 
-void update_screen() {
+void update_login_screen() {
     switch (LoginState) {
         case Unauthorized:
             LoginState = draw_account_choice_window();
@@ -222,3 +210,4 @@ void update_screen() {
     }
     wrefresh(login_window); // Make sure to refresh after updates
 }
+#endif
