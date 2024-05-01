@@ -134,36 +134,42 @@ void draw_edit_groups_window() {
                 break;
         }
     }
+    wclear(menu_window);
+
     switch (current_selection){
         case 0:
-            wclear(menu_window);
             mvwprintw(menu_window, 1, 1, "CREATE GROUP");
-            wrefresh(menu_window);
             break;
         case 1:
-            wclear(menu_window);
             mvwprintw(menu_window, 1, 1, "JOIN GROUP");
-            wrefresh(menu_window);
             break;
         case 2:
-            wclear(menu_window);
             mvwprintw(menu_window, 1, 1, "LEAVE GROUP");
-            wrefresh(menu_window);
             break;
         case 3:
-            wclear(menu_window);
             mvwprintw(menu_window, 1, 1, "RENAME GROUP");
-            wrefresh(menu_window);
             break;
         case 4:
-            wclear(menu_window);
             mvwprintw(menu_window, 1, 1, "VIEW GROUP");
-            wrefresh(menu_window);
             break;
     }
+    wrefresh(menu_window);
+
     napms(3000);
 
 }
+// TODO - create catchall function that iterates through groups and can return whatever is needed dependent on selection
+// CreateGroup(user, group_name)
+void draw_groups_create_window() {
+    mvwprintw(menu_window, 1, 1, "Enter group name:")
+}
+// JoinGroup(user, group_id)
+void draw_groups_join_window() {}
+// LeaveGroup(user, group_id)
+void draw_groups_leave_window() {}
+// GetGroups(user) -> get encoded groups
+void draw_groups_get_window() {}
+
 
 void update_menu_screen() {
     switch (MenuState) {
