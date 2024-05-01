@@ -35,9 +35,9 @@ Status send_ping_request() {
 		}
     } else {
         if (res) {
-            // std::cout << "HTTP Error: " << res->status << std::endl;
+            std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
-            // std::cout << "Network Error: " << res.error() << std::endl;
+            std::cout << "Network Error: " << res.error() << std::endl;
         }
     }
     return Failure;
@@ -65,9 +65,9 @@ Status send_login_request() {
 		}
     } else {
         if (res) {
-            // std::cout << "HTTP Error: " << res->status << std::endl;
+            std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
-            // std::cout << "Network Error: " << res.error() << std::endl;
+            std::cout << "Network Error: " << res.error() << std::endl;
         }
     }
     return Failure;
@@ -153,9 +153,70 @@ Status send_delete_account_request() {
 		}
     } else {
         if (res) {
-            // std::cout << "HTTP Error: " << res->status << std::endl;
+            std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
-            // std::cout << "Network Error: " << res.error() << std::endl;
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+    return Failure;
+
+}
+
+Status send_get_user_calendar_request() {
+    // Quote the username_string and password_string to ensure they are transmitted in a format the server expects.
+
+    // Prepare the body of the POST request
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
+
+    // Make a POST request
+    auto res = my_client->Post("/get_user_calendar", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
+        }
+    }
+    return Failure;
+
+}
+Status send_set_user_calendar_request() {
+    // Quote the username_string and password_string to ensure they are transmitted in a format the server expects.
+
+    // Prepare the body of the POST request
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string);
+
+    // Make a POST request
+    auto res = my_client->Post("/set_user_calendar", body, "text/plain");
+
+    // Check the response
+    if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
+        // std::cout << "Status: " << res->status << std::endl;
+        // std::cout << "Body: " << res->body << std::endl;
+        let response_stream = std::istringstream(res -> body);
+        char response_code;
+        response_stream >> response_code;
+        if (response_stream.fail()) return Failure;
+		if (response_code == AccountOk) {
+			return Success;
+		}
+    } else {
+        if (res) {
+            std::cout << "HTTP Error: " << res->status << std::endl;
+        } else {
+            std::cout << "Network Error: " << res.error() << std::endl;
         }
     }
     return Failure;
