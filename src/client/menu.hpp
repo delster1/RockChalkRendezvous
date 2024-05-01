@@ -74,9 +74,11 @@ void draw_group_interactions_window() {
             draw_menu_choice_window();
             break;
         case ViewingCalendars:
+            transfer_to_calendar_editor();
             // this will be where a user selects a group's calendar to view
             break;
         case ViewingGroups:
+            transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
             // set set group_calendars to get_groups fn.
 
@@ -92,13 +94,9 @@ void update_menu_screen() {
             MenuState = draw_menu_choice_window();
             break;
         case ViewingCalendars:
-            wclear(menu_window);
-            transfer_to_calendar_editor();
-            MenuState = MenuOption::InMenu;
-            break;
         case ViewingGroups: 
             wclear(menu_window);
-            transfer_to_group_calendar_view();
+            draw_group_interactions_window();
             MenuState = MenuOption::InMenu;
             break;
         case EditingGroups:
