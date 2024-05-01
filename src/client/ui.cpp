@@ -13,6 +13,7 @@ int main() {
     // Create and handle the login window
     login_window = create_window(LINES, COLS, 0, 0);
     LoginState = LoginOption::Unauthorized; // Assuming LoginState and LoginOption are defined
+    
     box(login_window, 0,0);
     while (LoginState != LoginOption::Authorized) { // Loop until authorized
         update_login_screen(); // Function needs to update loginState
