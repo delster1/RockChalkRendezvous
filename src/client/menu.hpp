@@ -140,6 +140,7 @@ void get_current_user_group_calendars(){
     mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS" : "FAILURE");
     wrefresh(menu_window);
     napms(3000);
+    wclear(menu_window);
     // Additional code to handle the decoded data
 }
 
@@ -163,7 +164,7 @@ void draw_edit_groups_window() {
     // int character;
     bool not_chosen = true;
     while (not_chosen ) {
-        // character = wgetch(interact_window);
+        // character = (interact_window);
 
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
@@ -329,7 +330,6 @@ void draw_groups_leave_window() {
     mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
     mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
 
-    send_leave_group_request(selected_group_id);
     Status left_group =  send_leave_group_request(selected_group_id);
     if (left_group == Failure) {
         wclear(menu_window);
