@@ -397,7 +397,7 @@ void draw_group_calendar_interaction() {
     mvwprintw(interact_window, 3, 42 + 2*space, "%d to %d Available", max * 4/5 - 1, max * 1/2);
     wattroff(interact_window, COLOR_PAIR(7));
     wattron(interact_window, COLOR_PAIR(1));
-    mvwprintw(interact_window, 3, 60 + 3*space, "Fewer than %d Available", max * 1/2 - 1);
+    mvwprintw(interact_window, 3, 60 + 3*space, "Fewer than %d Available", max * 1/2);
     wattroff(interact_window, COLOR_PAIR(1));
     
     mvwprintw(interact_window, 5, 3, "W/S: Scroll Up / Down");

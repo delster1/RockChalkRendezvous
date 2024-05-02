@@ -1,2 +1,2 @@
-localhost
+jorbonvm.centralus.cloudapp.azure.com
 7777
