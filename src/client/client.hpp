@@ -248,17 +248,23 @@ std::string send_get_groups_request() {
     return "Failure";
 }
 
-Status send_get_group_calendars_request(const usize group_id, std::vector<std::tuple<std::string, Calendar>>& group_calendars) {
+Status send_get_group_calendars_request(WINDOW* menu_window, const usize group_id, std::vector<std::tuple<std::string, Calendar>>& group_calendars) {
+    wclear(menu_window);
     std::string group_id_string = encode_group_id(group_id);
-    std::string body = quote_string(group_id_string);
+    std::string body = quote_string(username_string) + quote_string(password_string) + group_id_string;
     auto res = my_client->Post("/get_group_calendars", body, "text/plain");
-
     // Check the response
     if (res && res->status == 200) { // Assuming 200 is the HTTP OK status
         std::istringstream response_stream(res->body);
+        mvwprintw(menu_window, 20, 0, "%s", res->body.c_str());
         char response_code;
         response_stream >> response_code;
+        wrefresh(menu_window);
+        napms(10000);
         if (response_stream.fail() || response_code != GroupCalendars) {
+            std::cout << response_code << "\n";
+            mvwprintw(menu_window, 20, 1, "%c", response_code);
+
             return Failure;
         }
         
@@ -272,9 +278,11 @@ Status send_get_group_calendars_request(const usize group_id, std::vector<std::t
                 return Success;
             }
         );
-        
+        mvwprintw(menu_window, 20, 2, "%d", decode_result);
+
         propagate(decode_result);
-        
+        wrefresh(menu_window);
+        napms(10000);
         return Success;
         
     } else {
@@ -283,7 +291,6 @@ Status send_get_group_calendars_request(const usize group_id, std::vector<std::t
         } else {
             std::cout << "Network Error: " << res.error() << std::endl;
         }
-        
         return Failure;
     }
 }
