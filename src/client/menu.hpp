@@ -14,7 +14,7 @@
 #include "../shared/group.hpp"
 #include "login.hpp"
 #include "client.hpp"
-#include "calendar_editor.hpp"
+#include "calendar_editor.cpp"
 
 enum MenuOption {
     InMenu,     // This includes being in the menu, viewing options to change to the state below
@@ -126,20 +126,13 @@ void decode_groups(std::string request_output) {
 }
 
 Status get_current_user_group_calendars() {
-    if (send_get_group_calendars_request(current_group.id, group_calendars) == Failure) {
-        wclear(menu_window);
-        mvwprintw(menu_window, 1, 1, "%s", "FAILURE TO DECODE GROUP CALENDARS");
-        wrefresh(menu_window);
-        napms(3000);
-        wclear(menu_window);
-        return Failure;
-    }
+    Status status = send_get_group_calendars_request(current_group.id, group_calendars);
     wclear(menu_window);
-    mvwprintw(menu_window, 1, 1, "SUCCESS DECODING GROUP CALENDARS");
+    mvwprintw(menu_window, 1, 1, "%s", status == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
     wrefresh(menu_window);
     napms(3000);
     wclear(menu_window);
-    return Success;
+    return status;
 }
 
 void get_current_user_groups() {
