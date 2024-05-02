@@ -124,7 +124,7 @@ void get_current_user_group_calendars(){
     mvwprintw(menu_window, 5, 2, request_output.c_str());
     std::istringstream iss(request_output);
     std::string groups_to_decode;
-    // decode_vector<std::tuple<std::string, Calendar>>(iss, current_group_calendars, &Group::decode_static);
+    // decode_vector<std::vector<std::tuple<std::string, Calendar>>>(iss, current_group_calendars, Group::decode_static);
     wrefresh(menu_window);
 }
 
@@ -135,6 +135,7 @@ void get_current_user_groups() {
     decode_vector<Group>(iss, current_groups, Group::decode_static);
     wrefresh(menu_window);
 }
+
 void draw_edit_groups_window() {
     static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
     const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
@@ -346,7 +347,12 @@ void draw_groups_get_window() {
     // THIS WHERE USERS WILL CHOOSE WHICH GROUP CALENDAR TO VIEW
 }
 
+void update_user_calendar(){
+    std::string request_out = send_get_user_calendar_request();
+    std::istringstream iss(request_out);
 
+    Calendar::decode_static(iss, calendar);
+}
 
 void update_menu_screen() {
     switch (MenuState) {
@@ -355,8 +361,27 @@ void update_menu_screen() {
             break;
         case ViewingCalendars:
             wclear(menu_window);
+            update_user_calendar();
+
             transfer_to_calendar_editor();
-            send_set_user_calendar_request(calendar.encode());
+            wclear(menu_window);
+            switch (send_set_user_calendar_request(calendar.encode())) {
+                case Success:
+                    wclear(menu_window);
+                    mvwprintw(menu_window,  1, 1, "Updated user calendar!");
+                    wrefresh(menu_window);
+                    napms(2000);
+                    wclear(menu_window);
+            
+                    break;
+                case Failure:
+                    wclear(menu_window);
+                    mvwprintw(menu_window,  1, 1, "FAILED TO UPDATE user calendar!");
+                    wrefresh(menu_window);
+                    napms(2000);
+                    wclear(menu_window);
+                    break;
+            } 
             MenuState = MenuOption::InMenu;
             break;
         case ViewingGroups: 

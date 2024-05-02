@@ -209,7 +209,7 @@ Status send_set_user_calendar_request(const std::string encoded_calendar) {
         char response_code;
         response_stream >> response_code;
         if (response_stream.fail()) return Failure;
-		if (response_code == AccountOk) {
+		if (response_code == UserCalendarWritten) {
 			return Success;
 		}
     } else {
