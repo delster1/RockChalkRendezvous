@@ -30,6 +30,7 @@ void draw_groups_create_window();
 void draw_groups_join_window();
 void run_edit_group_selection(int selection);
 void get_current_user_groups();
+void get_current_user_group_calendars();
 static Group current_group;
 static std::vector<Group> current_groups;
 static std::vector<std::tuple<std::string, Calendar>> current_group_calendars;
@@ -90,6 +91,7 @@ void draw_group_interactions_window() {
             
         case ViewingGroups: // this will be where a user selects a group's calendar to view
             current_group = draw_groups_list();
+            get_current_user_group_calendars();
             // decode_group_calendars(send_get_groups_request());
             transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
@@ -103,6 +105,7 @@ void draw_group_interactions_window() {
     }
 }
 
+
 void decode_groups(std::string request_output) {
     wclear(menu_window);
     std::istringstream iss(request_output);
@@ -115,7 +118,7 @@ void decode_groups(std::string request_output) {
 
     wrefresh(menu_window);
     napms(2000); // Wait for 2 seconds (for visibility in demonstration)
-    wgetch(menu_window);
+
     // Fix: Call the decode_vector function with the correct arguments
 }
 
@@ -124,8 +127,20 @@ void get_current_user_group_calendars(){
     mvwprintw(menu_window, 5, 2, request_output.c_str());
     std::istringstream iss(request_output);
     std::string groups_to_decode;
-    // decode_vector<std::vector<std::tuple<std::string, Calendar>>>(iss, current_group_calendars, Group::decode_static);
+    active_group_name = current_group.name;
+    Status decode_result = decode_vector<std::tuple<std::string, Calendar>>(iss, group_calendars, [&](std::istream& s, std::tuple<std::string, Calendar>& pair) {
+        std::string username;
+        Calendar calendar;
+        propagate(read_quoted_string(s, username));
+        propagate(calendar.decode(s));
+        pair = std::make_tuple(username, calendar);
+        return Success;
+    });
+    wclear(menu_window);
+    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS" : "FAILURE");
     wrefresh(menu_window);
+    napms(3000);
+    // Additional code to handle the decoded data
 }
 
 void get_current_user_groups() {
@@ -137,7 +152,7 @@ void get_current_user_groups() {
 }
 
 void draw_edit_groups_window() {
-    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "Rename Group", "View Groups" };
+    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group" };
     const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
     int current_selection = 0;
     int ch;
@@ -203,13 +218,7 @@ void run_edit_group_selection(int current_selection){
         case 2:
             draw_groups_leave_window();
             break;
-        case 3:
-            mvwprintw(menu_window, 1, 1, "RENAME GROUP");
-            break;
-        case 4:
 
-            mvwprintw(menu_window, 1, 1, "VIEW GROUP");
-            break;
     }
 }
 Group draw_groups_list() {
@@ -309,7 +318,6 @@ void draw_groups_join_window() {
         
     }
     wrefresh(menu_window);
-    napms(2000);
     MenuState = MenuOption::InMenu;
 }
 // LeaveGroup(user, group_id)
@@ -345,6 +353,7 @@ void draw_groups_get_window() {
     mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
 
     // THIS WHERE USERS WILL CHOOSE WHICH GROUP CALENDAR TO VIEW
+    
 }
 
 void update_user_calendar(){
@@ -353,7 +362,7 @@ void update_user_calendar(){
 
     Calendar::decode_static(iss, calendar);
 }
-
+// MARK: Update Menu
 void update_menu_screen() {
     switch (MenuState) {
         case InMenu:
@@ -362,7 +371,6 @@ void update_menu_screen() {
         case ViewingCalendars:
             wclear(menu_window);
             update_user_calendar();
-
             transfer_to_calendar_editor();
             wclear(menu_window);
             switch (send_set_user_calendar_request(calendar.encode())) {
