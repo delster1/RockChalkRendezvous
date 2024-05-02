@@ -139,7 +139,7 @@ void get_current_user_group_calendars(){
         return Success;
     });
     wclear(menu_window);
-    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS" : "FAILURE");
+    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
     wrefresh(menu_window);
     napms(3000);
     wclear(menu_window);
@@ -168,12 +168,13 @@ void draw_edit_groups_window() {
     bool not_chosen = true;
     while (not_chosen ) {
         // character = (interact_window);
-        character = wgetch(interact_window);
-        if (character == 'q') {
-            not_chosen = false;
-            MenuState = MenuOption::InMenu;
-            return;
-        }
+        // character = wgetch(menu_window);
+        // if (character == 'q') {
+        //     not_chosen = false;
+        //     wclear(menu_window);
+        //     MenuState = MenuOption::InMenu;
+        //     return; 
+        // }
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
                 wattron(menu_window, A_REVERSE);  // Highlight the selected choice
@@ -203,6 +204,10 @@ void draw_edit_groups_window() {
             case '\n': // User made a selection
                 not_chosen = false;
                 break;
+            case 'q':
+                wclear(menu_window);
+                MenuState = MenuOption::InMenu;
+                return;
         }
     }
     wclear(menu_window);
@@ -246,12 +251,7 @@ Group draw_groups_list() {
     bool not_chosen = true;
     mvwprintw(menu_window, 15, 1, "Press \'q\' to exit.");
     while (not_chosen ) {
-        character = wgetch(interact_window);
-        if (character == 'q') {
-            not_chosen = false;
-            MenuState = MenuOption::InMenu;
-            return Group();
-        }
+        
         for (int i = 0; i < num_groups; ++i) {
             if (i == current_selection) {
                 wattron(menu_window, A_REVERSE);  // Highlight the selected choice
@@ -280,6 +280,10 @@ Group draw_groups_list() {
                     current_selection = 0;
                 }
                 break;
+            case 'q':
+                wclear(menu_window);
+                MenuState = MenuOption::InMenu;
+                return Group();
             case '\n': // User made a selection
                 not_chosen = false;
                 break;
@@ -323,14 +327,36 @@ std::string usize_to_hex_string(usize value) {
 void draw_groups_join_window() {
     mvwprintw(menu_window, 1, 1, "Enter a group id to join:");
     echo();
+    std::string zeroes = "00000000";
     char group_id[50];
+    GroupID group_id_type;
     mvwgetnstr(menu_window, 2, 5, group_id, 50);
     std::string group_id_string = group_id;
+    std::istringstream iss(zeroes + group_id_string);
+    decode_group_id(iss, group_id_type);
     noecho();
-    usize group_id_usize = std::stoull(group_id_string);
-    mvwprintw(menu_window, 3, 5, "%d", group_id_usize);
+    usize group_id_usize;
+    try {
+        group_id_usize = std::stoull(group_id_string);
+        // Rest of the code
+    } catch (const std::invalid_argument& e) {
+        // Handle invalid input
+        mvwprintw(menu_window, 5, 1, "INVALID INPUT");
+        wrefresh(menu_window);
+        napms(2000);
+        MenuState = MenuOption::InMenu;
+        return;
+    } catch (const std::out_of_range& e) {
+        // Handle out of range input
+        mvwprintw(menu_window, 5, 1, "OUT OF RANGE INPUT");
+        wrefresh(menu_window);
+        napms(2000);
+        MenuState = MenuOption::InMenu;
+        return;
+    }
+    mvwprintw(menu_window, 3, 5, "%d", group_id_type);
 
-    Status joined_group =  send_join_group_request(group_id_usize);
+    Status joined_group =  send_join_group_request(group_id_type);
     if (joined_group == Failure) {
         mvwprintw(menu_window, 5, 1, "FAILED TO JOIN GROUP");
     } else { 
