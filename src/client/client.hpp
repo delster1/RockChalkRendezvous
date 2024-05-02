@@ -258,10 +258,10 @@ std::string send_get_group_calendars_request(const usize group_id) {
         std::istringstream response_stream(res->body);
         char response_code;
         response_stream >> response_code;
-        if (response_stream.fail() || response_code != 'M') {
+        if (response_stream.fail() || response_code != GroupCalendars) {
             return "Failure";
         } else {
-            return res->body.substr(1);
+            return res->body.substr(2);
         }
     } else {
         if (res) {
