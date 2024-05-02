@@ -47,6 +47,7 @@ MenuOption draw_menu_choice_window() {
     noecho();          // Don't echo the pressed keys to the menu_windowdow
     mvwprintw(menu_window, 0, 0, "Choose one:");
     wrefresh(menu_window);
+    int character;
     while (true) {
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
@@ -154,7 +155,7 @@ void get_current_user_groups() {
 }
 
 void draw_edit_groups_window() {
-    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group" };
+    static const char *editing_menu_choices[] = { "Create Group", "Join Group", "Leave Group", "View Groups" };
     const int num_choices = sizeof(editing_menu_choices) / sizeof(editing_menu_choices[0]);
     int current_selection = 0;
     int ch;
@@ -162,11 +163,17 @@ void draw_edit_groups_window() {
     noecho();          // Don't echo the pressed keys to the menu_windowdow
     mvwprintw(menu_window, 0, 0, "Choose one:");
     wrefresh(menu_window);
-    // int character;
+    mvwprintw(menu_window, 15, 1, "Press \'q\' to exit.");
+    int character;
     bool not_chosen = true;
     while (not_chosen ) {
         // character = (interact_window);
-
+        character = wgetch(interact_window);
+        if (character == 'q') {
+            not_chosen = false;
+            MenuState = MenuOption::InMenu;
+            return;
+        }
         for (int i = 0; i < num_choices; ++i) {
             if (i == current_selection) {
                 wattron(menu_window, A_REVERSE);  // Highlight the selected choice
@@ -203,7 +210,7 @@ void draw_edit_groups_window() {
     
     wrefresh(menu_window);
 
-    napms(3000);
+    napms(1000);
     wclear(menu_window);
 
 }
@@ -220,6 +227,8 @@ void run_edit_group_selection(int current_selection){
         case 2:
             draw_groups_leave_window();
             break;
+        case 3:
+            draw_groups_list();
 
     }
 }
@@ -233,11 +242,16 @@ Group draw_groups_list() {
     keypad(menu_window, TRUE); // Enable keyboard input for the menu_windowdow
     noecho();          // Don't echo the pressed keys to the menu_windowdow
     wrefresh(menu_window);
-
+    int character;
     bool not_chosen = true;
+    mvwprintw(menu_window, 15, 1, "Press \'q\' to exit.");
     while (not_chosen ) {
-        // character = wgetch(interact_window);
-
+        character = wgetch(interact_window);
+        if (character == 'q') {
+            not_chosen = false;
+            MenuState = MenuOption::InMenu;
+            return Group();
+        }
         for (int i = 0; i < num_groups; ++i) {
             if (i == current_selection) {
                 wattron(menu_window, A_REVERSE);  // Highlight the selected choice
@@ -303,25 +317,23 @@ std::string usize_to_hex_string(usize value) {
     ss << std::hex << value; // Convert to hex
     return ss.str();
 }
-\
+
 
 // JoinGroup(user, group_id)
 void draw_groups_join_window() {
     mvwprintw(menu_window, 1, 1, "Enter a group id to join:");
     echo();
     char group_id[50];
-    std::string zeroes = "00000000";
     mvwgetnstr(menu_window, 2, 5, group_id, 50);
     std::string group_id_string = group_id;
     noecho();
     usize group_id_usize = std::stoull(group_id_string);
     mvwprintw(menu_window, 3, 5, "%d", group_id_usize);
-    mvwprintw(menu_window, 3, 20, "%s", (zeroes + group_id_string).c_str());
 
     Status joined_group =  send_join_group_request(group_id_usize);
     if (joined_group == Failure) {
         mvwprintw(menu_window, 5, 1, "FAILED TO JOIN GROUP");
-    } else {
+    } else { 
         mvwprintw(menu_window, 5, 1, "SUCCESSFULLY JOINED GROUP");
         
     }
@@ -387,7 +399,6 @@ void update_menu_screen() {
                     wrefresh(menu_window);
                     napms(2000);
                     wclear(menu_window);
-            
                     break;
                 case Failure:
                     wclear(menu_window);
