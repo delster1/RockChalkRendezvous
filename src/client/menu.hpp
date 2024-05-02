@@ -25,7 +25,7 @@ enum MenuOption {
 
 static MenuOption MenuState;
 static WINDOW* menu_window;
-static const char *menu_choices[] = { "View Calendar", "View Group Calendars", "Edit Groups" };
+static const char *menu_choices[] = { "View/Edit Calendar", "View Group Calendars", "Edit Groups" };
 void draw_edit_groups_window();
 void draw_groups_create_window();
 void draw_groups_join_window();
@@ -246,7 +246,7 @@ Group draw_groups_list() {
             }
             // Safeguard against potential out-of-bounds or corrupted strings - cgpt
             // std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
-            mvwprintw(menu_window, i + 1, 1, "%s %lu", current_groups[i].name.c_str(), current_groups[i].id);
+            mvwprintw(menu_window, i + 1, 1, "%s %lx", current_groups[i].name.c_str(), current_groups[i].id);
             if (i == current_selection) {
                 wattroff(menu_window, A_REVERSE);
             }
