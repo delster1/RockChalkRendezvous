@@ -384,18 +384,18 @@ void draw_group_calendar_interaction() {
     
     u32 max = group_calendars.size();
     u32 space = 8;
-    wattron(calendar_window, COLOR_PAIR(3));
+    wattron(interact_window, COLOR_PAIR(3));
     mvwprintw(interact_window, 3, 8, "All %d Available", max);
-    wattroff(calendar_window, COLOR_PAIR(3));
-    wattron(calendar_window, COLOR_PAIR(5));
+    wattroff(interact_window, COLOR_PAIR(3));
+    wattron(interact_window, COLOR_PAIR(5));
     mvwprintw(interact_window, 3, 24 + space, "%d to %d Available", max - 1, max * 4/5);
-    wattroff(calendar_window, COLOR_PAIR(5));
-    wattron(calendar_window, COLOR_PAIR(7));
+    wattroff(interact_window, COLOR_PAIR(5));
+    wattron(interact_window, COLOR_PAIR(7));
     mvwprintw(interact_window, 3, 42 + 2*space, "%d to %d Available", max * 4/5 - 1, max * 1/2);
-    wattroff(calendar_window, COLOR_PAIR(7));
-    wattron(calendar_window, COLOR_PAIR(1));
+    wattroff(interact_window, COLOR_PAIR(7));
+    wattron(interact_window, COLOR_PAIR(1));
     mvwprintw(interact_window, 3, 60 + 3*space, "Fewer than %d Available", max * 1/2 - 1);
-    wattroff(calendar_window, COLOR_PAIR(1));
+    wattroff(interact_window, COLOR_PAIR(1));
     
     mvwprintw(interact_window, 5, 3, "W/S: Scroll Up / Down");
     mvwprintw(interact_window, 6, 3, "A/D: Scroll Left / Right");
