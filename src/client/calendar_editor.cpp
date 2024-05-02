@@ -10,7 +10,7 @@
 #include "../../src/shared/calendar.hpp"
 #include "calendar_editor.hpp"
 
-
+// UI state is modeled as a finite state machine
 enum UIState {
     ViewingCalendar,
     ViewingList,
@@ -22,6 +22,8 @@ enum UIState {
     GroupCalendar,
 };
 
+
+// Static values for use by all functions
 
 static u32 screen_height;
 static u32 screen_width;
@@ -53,13 +55,14 @@ static RepeatType new_repeat_type;
 static u32 new_repeat_count;
 
 
-
+// Pad a string with spaces so that it is centered to the desired width
 inline std::string pad_center(std::string s, u32 width) {
     return std::string((width - s.length()) / 2, ' ') + s;
 }
 
 
-// Select instances of time blocks that appear in the visible area
+// Finds all of the occurrances of the block that happen in a given time range
+// Used to determine what will be in view before drawing
 std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> render_block(const TimeBlock& block, const TimeAndDate& start_day, const TimeAndDate& end_day) {
     std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> visible_occurences;
     
@@ -113,7 +116,7 @@ std::vector<std::tuple<u32, TimeAndDate, TimeAndDate>> render_block(const TimeBl
     return visible_occurences;
 }
 
-
+// Draw an instance of a block that has been rendered to the calendar display
 void draw_block(const TimeAndDate& display_start, const TimeAndDate& display_end, const u32 color_choice) {
     bool render_select = ui_state == ViewingCalendar || ui_state == AddingStart || ui_state == AddingEnd;
     
@@ -145,7 +148,7 @@ void draw_block(const TimeAndDate& display_start, const TimeAndDate& display_end
     }
 }
 
-
+// Draw the frame of the calendar display with no blocks added yet
 void draw_calendar_frame(const bool render_select) {
     wattron(calendar_window, COLOR_PAIR(2));
     mvwprintw(calendar_window, 1, 0, pad_center(std::to_string(calendar_start_day.get_year()), 6).c_str());
@@ -188,7 +191,7 @@ void draw_calendar_frame(const bool render_select) {
     }
 }
 
-
+// Draw the default user calendar display
 void draw_calendar_week() {
     bool render_select = ui_state == ViewingCalendar || ui_state == AddingStart || ui_state == AddingEnd;
     
@@ -208,7 +211,7 @@ void draw_calendar_week() {
     }
 }
 
-
+// Find the render color from the availability of a time
 u32 get_group_color_map(const u32 count) {
     const u32 max = group_calendars.size();
     
@@ -218,7 +221,7 @@ u32 get_group_color_map(const u32 count) {
     else return 1; // White
 }
 
-
+// Group calendar display
 void draw_group_calendar_week() {
     draw_calendar_frame(true);
     
@@ -266,7 +269,7 @@ void draw_group_calendar_week() {
     
 }
 
-
+// Draws the list display screen
 void draw_event_list() {
     const int margin = 20;
     
@@ -309,7 +312,7 @@ void draw_event_list() {
 }
 
 
-
+// Calendar view controls instructions
 void draw_view_interaction() {
     mvwprintw(interact_window, 1, 3, "L: List View");
     mvwprintw(interact_window, 2, 3, "W/S: Scroll Up / Down");
@@ -318,7 +321,7 @@ void draw_view_interaction() {
     mvwprintw(interact_window, 5, 3, "N: Add a New Event");
     mvwprintw(interact_window, 6, 3, "Q: Save and Exit");
 }
-
+// List view controls instructions
 void draw_list_interaction() {
     mvwprintw(interact_window, 1, 3, "C: Calendar View");
     mvwprintw(interact_window, 2, 3, "W/S: Scroll Up / Down");
@@ -326,14 +329,14 @@ void draw_list_interaction() {
     mvwprintw(interact_window, 4, 3, "Backspace: Delete Selected Event");
     mvwprintw(interact_window, 5, 3, "Q: Save and Exit");
 }
-
+// Confirming remove block dialogue
 void draw_remove_confirm_interaction() {
     mvwprintw(interact_window, 1, 3, "Are you sure you want to delete this event?");
     mvwprintw(interact_window, 3, 3, "Backspace: Cancel");
     mvwprintw(interact_window, 4, 3, "Enter: Confirm");
     mvwprintw(interact_window, 5, 3, "Q: Save and Exit");
 }
-
+// Adding start time instructions
 void draw_adding_start_interaction() {
     mvwprintw(interact_window, 1, 3, "Select the start time of the new event. Start time: %s", calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes(calendar_selected_row * calendar_row_size).to_string().c_str());
     mvwprintw(interact_window, 3, 3, "Backspace: Cancel");
@@ -343,7 +346,7 @@ void draw_adding_start_interaction() {
     mvwprintw(interact_window, 7, 3, "Arrow Keys: Move Selection Cursor");
     mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
 }
-
+// Adding end time instructions
 void draw_adding_end_interaction() {
     mvwprintw(interact_window, 1, 3, "Select the end time of the new event. Start time: %s", new_start_time.to_string().c_str());
     mvwprintw(interact_window, 2, 3, "                                        End time: %s", calendar_start_day.add_days(calendar_selected_day_of_week).add_minutes((calendar_selected_row + 1) * calendar_row_size).to_string().c_str());
@@ -354,7 +357,7 @@ void draw_adding_end_interaction() {
     mvwprintw(interact_window, 7, 3, "Arrow Keys: Move Selection Cursor");
     mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
 }
-
+// Selecting repeat type instructions
 void draw_adding_repeat_type_interaction() {
     mvwprintw(interact_window, 1, 3, "Choose a repeat frequency.");
     mvwprintw(interact_window, 3, 3, "O/N: One Time Event");
@@ -365,7 +368,7 @@ void draw_adding_repeat_type_interaction() {
     mvwprintw(interact_window, 8, 3, "Backspace: Go Back");
     mvwprintw(interact_window, 9, 3, "Q: Save and Exit");
 }
-
+// Adding repeat count instructions
 void draw_adding_repeat_count_interaction() {
     mvwprintw(interact_window, 1, 3, "Choose the number of repetitions. Repeat count: %d    Last occurrance: %s",
         new_repeat_count + 1,
@@ -378,7 +381,7 @@ void draw_adding_repeat_count_interaction() {
     mvwprintw(interact_window, 7, 3, "A/D: Scroll Left / Right");
     mvwprintw(interact_window, 8, 3, "Q: Save and Exit");
 }
-
+// Group calendar view controls instructions and color key
 void draw_group_calendar_interaction() {
     mvwprintw(interact_window, 1, 3, "Group calendar for %s", active_group_name.c_str());
     
@@ -406,75 +409,7 @@ void draw_group_calendar_interaction() {
 
 
 
-
-// TimeBlock run_add_block() {
-//     echo();  // Enable echoing of characters typed by the user
-//     keypad(interact_window, TRUE);  // Enable keypad for the window to handle function keys
-    
-//     // Clear the window and prepare for input
-//     char start_time_string[22];
-//     strcpy(start_time_string, prompt_user_for_time().c_str());
-//     wclear(interact_window);
-//     char end_time_string[22];
-//     strcpy(end_time_string, prompt_user_for_time().c_str());
-//     wclear(interact_window);
-    
-    
-//     // Optional: display the input for confirmation
-//     wrefresh(interact_window);
-    
-//     // Wait for a key press before continuing
-//     TimeAndDate start_time = convert_string_to_time(start_time_string);
-//     TimeAndDate end_time = convert_string_to_time(end_time_string);
-//     char repeat = prompt_user_for_repeat();
-//     unsigned int repeat_interval = 0;
-//     RepeatType repeat_type;
-    
-//     switch (repeat) {
-//         case 'N':
-//             repeat_type = RepeatType::NoRepeat;
-//             break;
-//         case 'D':
-//             repeat_type = RepeatType::Daily;
-//             break;
-//         case 'W':
-//             repeat_type = RepeatType::Weekly;
-//             break;
-//         case 'M':
-//             repeat_type = RepeatType::Monthly;
-//             break;
-//         case 'Y':
-//             repeat_type = RepeatType::Yearly;
-//             break;
-//         default:
-//             repeat_type = RepeatType::NoRepeat;
-//             break;
-//     }
-    
-//     if (repeat != 'N') {
-//         repeat_interval = prompt_user_for_repeat_interval();
-//     }
-    
-//     let new_block = TimeBlock("new event", start_time, end_time, repeat_type, repeat_interval);
-//     wclear(interact_window);
-//     mvwprintw(interact_window, 1, 0, "%s", new_block.encode().c_str());
-    
-//     wgetch(interact_window);
-    
-//     noecho();
-//     return new_block;
-// }
-
-
-
-
-
-
-
-
-
-
-
+// Scroll the view to the current repeat count selection
 void focus_repeat_count_select() {
     TimeAndDate focus = std::get<0>(TimeBlock("", new_start_time, new_end_time, new_repeat_type, new_repeat_count).get_occurrence(new_repeat_count));
     calendar_start_day = focus.replace_time(0).add_days(-static_cast<int>(focus.get_day_of_week()));
@@ -487,7 +422,7 @@ void focus_repeat_count_select() {
     }
 }
 
-
+// Adjust the display parameters to match a new screen size
 void on_resize() {
     screen_height = getmaxy(stdscr);
     screen_width = getmaxx(stdscr);
@@ -508,7 +443,7 @@ void on_resize() {
     }
 }
 
-
+// Set up the windows and display parameters
 void initialize_window() {
     //initscr();
     noecho();
@@ -548,7 +483,7 @@ void initialize_window() {
     calendar_start_day = now.replace_time(0).add_days(-static_cast<int>(now.get_day_of_week()));
 }
 
-
+// Main loop handles input, invariants, and drawing
 void editor_main_loop() {
     
     bool redraw = true;
@@ -562,7 +497,7 @@ void editor_main_loop() {
         }
         
         
-        
+        // Inputs handled as transitions between states in a FSM in this switch statement
         switch (character) {
             case ERR:
                 if (getmaxy(stdscr) != screen_height || getmaxx(stdscr) != screen_width) {
@@ -801,6 +736,7 @@ void editor_main_loop() {
         redraw = false;
         
         
+        // Enforce invariants, or make sure all drawing parameters have valid values
         
         if (calendar_selected_row < 0) {
             calendar_selected_row += calendar_scroll_height;
@@ -835,6 +771,7 @@ void editor_main_loop() {
         
         
         
+        // Draw based on current menu state
         
         wclear(calendar_window);
         wclear(interact_window);
@@ -896,7 +833,7 @@ void editor_main_loop() {
 }
 
 
-// Functions to be called by the parent program
+// Entry point functions to be called by the parent program
 
 void transfer_to_calendar_editor() {
     initialize_window();
@@ -913,41 +850,3 @@ void transfer_to_group_calendar_view() {
 
 
 
-
-
-
-
-
-
-
-    // calendar.busy_times.push_back(TimeBlock(
-    //     "Morning event",
-    //     now.replace_time(1 * 60),
-    //     now.replace_time(4 * 60),
-    //     RepeatType::NoRepeat,
-    //     0
-    // ));
-    
-    // calendar.busy_times.push_back(TimeBlock(
-    //     "Afternoon event",
-    //     now.replace_time(12 * 60),
-    //     now.replace_time(15 * 60),
-    //     RepeatType::Weekly,
-    //     12
-    // ));
-    
-    // calendar.busy_times.push_back(TimeBlock(
-    //     "Daily event",
-    //     now.replace_time(18 * 60),
-    //     now.replace_time(19 * 60),
-    //     RepeatType::Daily,
-    //     30
-    // ));
-    
-    // calendar.busy_times.push_back(TimeBlock(
-    //     "Monthly event",
-    //     now.add_days(2),
-    //     now.add_days(2).add_minutes(90),
-    //     RepeatType::Monthly,
-    //     30
-    // ));

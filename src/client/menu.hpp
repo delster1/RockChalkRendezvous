@@ -2,12 +2,6 @@
 #define RCR_MENU_FILE_CLIENT
 #include <iomanip>
 #include <ncurses.h>
-#include "../shared/timeanddate.hpp"
-#include "../shared/calendar.hpp"
-#include "../shared/group.hpp"
-#include "login.hpp"
-#include "calendar_editor.cpp"
-#include "client.hpp"
 #include <string.h>
 #include <vector>
 #include <algorithm>
@@ -15,6 +9,12 @@
 #include <cstring>
 #include "httplib.h"
 #include <iostream>
+#include "../shared/timeanddate.hpp"
+#include "../shared/calendar.hpp"
+#include "../shared/group.hpp"
+#include "login.hpp"
+#include "client.hpp"
+#include "calendar_editor.cpp"
 
 enum MenuOption {
     InMenu,     // This includes being in the menu, viewing options to change to the state below
@@ -31,7 +31,7 @@ void draw_groups_create_window();
 void draw_groups_join_window();
 void run_edit_group_selection(int selection);
 void get_current_user_groups();
-void get_current_user_group_calendars();
+Status get_current_user_group_calendars();
 static Group current_group;
 static std::vector<Group> current_groups;
 static std::vector<std::tuple<std::string, Calendar>> current_group_calendars;
@@ -92,13 +92,14 @@ void draw_group_interactions_window() {
             break;
             
         case ViewingGroups: // this will be where a user selects a group's calendar to view
-            current_group = draw_groups_list();
-            get_current_user_group_calendars();
-            // decode_group_calendars(send_get_groups_request());
-            transfer_to_group_calendar_view();
             // set active_group to request for get_groups[0]
-            // set set group_calendars to get_groups fn.
-
+            // set group_calendars to get_groups fn
+            current_group = draw_groups_list();
+            active_group_name = current_group.name;
+            // decode_group_calendars(send_get_groups_request());
+            if (get_current_user_group_calendars() == Success) {
+                transfer_to_group_calendar_view();
+            }
             break;
         case EditingGroups:
             draw_edit_groups_window();
@@ -124,32 +125,19 @@ void decode_groups(std::string request_output) {
     // Fix: Call the decode_vector function with the correct arguments
 }
 
-void get_current_user_group_calendars(){
-    std::string request_output = send_get_group_calendars_request(current_group.id);
-    mvwprintw(menu_window, 5, 2, request_output.c_str());
-    std::istringstream iss(request_output);
-    std::string groups_to_decode;
-    active_group_name = current_group.name;
-    Status decode_result = decode_vector<std::tuple<std::string, Calendar>>(iss, group_calendars, [&](std::istream& s, std::tuple<std::string, Calendar>& pair) {
-        std::string username;
-        Calendar calendar;
-        propagate(read_quoted_string(s, username));
-        propagate(calendar.decode(s));
-        pair = std::make_tuple(username, calendar);
-        return Success;
-    });
+Status get_current_user_group_calendars() {
+    Status status = send_get_group_calendars_request(current_group.id, group_calendars);
     wclear(menu_window);
-    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
+    mvwprintw(menu_window, 1, 1, "%s", status == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
     wrefresh(menu_window);
     napms(3000);
     wclear(menu_window);
-    // Additional code to handle the decoded data
+    return status;
 }
 
 void get_current_user_groups() {
     std::string request_output = send_get_groups_request();
     std::istringstream iss(request_output);
-    std::string groups_to_decode;
     decode_vector<Group>(iss, current_groups, Group::decode_static);
     wrefresh(menu_window);
 }

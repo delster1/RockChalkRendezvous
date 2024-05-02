@@ -248,7 +248,7 @@ std::string send_get_groups_request() {
     return "Failure";
 }
 
-std::string send_get_group_calendars_request(const usize group_id) { 
+Status send_get_group_calendars_request(const usize group_id, std::vector<std::tuple<std::string, Calendar>>& group_calendars) {
     std::string group_id_string = encode_group_id(group_id);
     std::string body = quote_string(group_id_string);
     auto res = my_client->Post("/get_group_calendars", body, "text/plain");
@@ -258,20 +258,34 @@ std::string send_get_group_calendars_request(const usize group_id) {
         std::istringstream response_stream(res->body);
         char response_code;
         response_stream >> response_code;
-        if (response_stream.fail() || response_code != 'M') {
-            return "Failure";
-        } else {
-            return res->body.substr(1);
+        if (response_stream.fail() || response_code != GroupCalendars) {
+            return Failure;
         }
+        
+        Status decode_result = decode_vector<std::tuple<std::string, Calendar>>(response_stream, group_calendars,
+            [&](std::istream& s, std::tuple<std::string, Calendar>& pair) {
+                std::string username;
+                Calendar calendar;
+                propagate(read_quoted_string(s, username));
+                propagate(calendar.decode(s));
+                pair = std::make_tuple(username, calendar);
+                return Success;
+            }
+        );
+        
+        propagate(decode_result);
+        
+        return Success;
+        
     } else {
         if (res) {
             std::cout << "HTTP Error: " << res->status << std::endl;
         } else {
             std::cout << "Network Error: " << res.error() << std::endl;
         }
+        
+        return Failure;
     }
-
-    return "Failure";
 }
 
 Status send_create_group_request(const std::string& group_name) { 
