@@ -126,6 +126,7 @@ void decode_groups(std::string request_output) {
 }
 
 Status get_current_user_group_calendars() {
+    group_calendars.clear();
     Status status = send_get_group_calendars_request(current_group.id, group_calendars);
     wclear(menu_window);
     mvwprintw(menu_window, 1, 1, "%s", status == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
