@@ -9,8 +9,6 @@
 #include "../shared/core_utils.hpp"
 #include "../shared/group.hpp"
 #define CONFIG_FILE_NAME "config.txt"
-#define DEFAULT_SERVER_HOSTNAME "localhost"
-#define DEFAULT_SERVER_PORT 7777
 // cached info in static variables - at top of file, can be referenced outside 
 
 static std::string hostname;

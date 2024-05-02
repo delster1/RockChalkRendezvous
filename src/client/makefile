@@ -13,7 +13,7 @@ endif
 
 build: $(SOURCES)
 ifeq ($(WINDOWS), yes)
-	$(CC) $(FLAGS) $(SOURCES) -o $(TARGET).exe $(WIN_LDLIBS)
+	g++ -std=c++17 -I"../../lib/cpp-httplib" -I"../../lib/ncurses/include" -I"../../lib/ncurses/include/ncursesw" ui.cpp -o ui.exe -L"../../lib/ncurses/lib" -lncurses -DNCURSES_STATIC -lws2_32
 else
 	$(CC) $(FLAGS) $(SOURCES) -o $(TARGET) $(LINUX_LDLIBS)
 endif

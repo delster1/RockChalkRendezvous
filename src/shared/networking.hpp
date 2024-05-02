@@ -5,7 +5,7 @@
 
 
 #define DEFAULT_SERVER_PORT 7777
-#define DEFAULT_SERVER_HOSTNAME "localhost"
+#define DEFAULT_SERVER_HOSTNAME "jorbonvm.centralus.cloudapp.azure.com"
 
 
 // must match URL_PATTERNS
