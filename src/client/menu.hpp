@@ -258,7 +258,7 @@ Group draw_groups_list() {
             }
             // Safeguard against potential out-of-bounds or corrupted strings - cgpt
             // std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
-            mvwprintw(menu_window, i + 1, 1, "%s", current_groups[i].name.c_str());
+            mvwprintw(menu_window, i + 1, 1, "%s %lu", current_groups[i].name.c_str(), current_groups[i].id);
             if (i == current_selection) {
                 wattroff(menu_window, A_REVERSE);
             }
