@@ -298,9 +298,8 @@ Status send_create_group_request(const std::string& group_name) {
     return Failure;
 }
 
-Status send_join_group_request(const usize group_id) { 
-    std::string group_id_string = encode_group_id(group_id);
-    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id_string);
+Status send_join_group_request(const usize group_id) {
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + encode_group_id(group_id);
     auto res = my_client->Post("/join_group", body, "text/plain");
 
     // Check the response
@@ -349,9 +348,8 @@ Status send_rename_group_request(const usize group_id, const std::string& group_
     return Failure;
 }
 
-Status send_leave_group_request(const usize group_id) { 
-    std::string group_id_string = encode_group_id(group_id);
-    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + quote_string(group_id_string);
+Status send_leave_group_request(const usize group_id) {
+    std::string body = quote_string(username_string) + "\n" + quote_string(password_string) + "\n" + encode_group_id(group_id);
     auto res = my_client->Post("/leave_group", body, "text/plain");
 
     // Check the response

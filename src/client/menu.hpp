@@ -1,5 +1,6 @@
 #ifndef RCR_MENU_FILE_CLIENT
 #define RCR_MENU_FILE_CLIENT
+#include <iomanip>
 #include <ncurses.h>
 #include "../shared/timeanddate.hpp"
 #include "../shared/calendar.hpp"
@@ -297,31 +298,37 @@ void draw_groups_create_window() {
     napms(2000);
     MenuState = MenuOption::InMenu;
 }
+std::string usize_to_hex_string(usize value) {
+    std::stringstream ss;
+    ss << std::hex << value; // Convert to hex
+    return ss.str();
+}
+\
 
 // JoinGroup(user, group_id)
 void draw_groups_join_window() {
-    Group selected_group = draw_groups_list();
+    mvwprintw(menu_window, 1, 1, "Enter a group id to join:");
+    echo();
+    char group_id[50];
+    std::string zeroes = "00000000";
+    mvwgetnstr(menu_window, 2, 5, group_id, 50);
+    std::string group_id_string = group_id;
+    noecho();
+    usize group_id_usize = std::stoull(group_id_string);
+    mvwprintw(menu_window, 3, 5, "%d", group_id_usize);
+    mvwprintw(menu_window, 3, 20, "%s", (zeroes + group_id_string).c_str());
 
-    usize selected_group_id = selected_group.id;
-    std::string selected_group_name = selected_group.name;
-    wclear(menu_window);
-    mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
-    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
-
-    send_join_group_request(selected_group_id);
-    Status joined_group =  send_join_group_request(selected_group_id);
+    Status joined_group =  send_join_group_request(group_id_usize);
     if (joined_group == Failure) {
-        wclear(menu_window);
-        mvwprintw(menu_window, 1, 1, "FAILED TO JOIN GROUP");
+        mvwprintw(menu_window, 5, 1, "FAILED TO JOIN GROUP");
     } else {
-        wclear(menu_window);
-        mvwprintw(menu_window, 1, 1, "SUCCESSFULLY JOINED GROUP");
+        mvwprintw(menu_window, 5, 1, "SUCCESSFULLY JOINED GROUP");
         
     }
     wrefresh(menu_window);
     MenuState = MenuOption::InMenu;
 }
-// LeaveGroup(user, group_id)
+// LeaveGroup(user, group_id)g
 void draw_groups_leave_window() {
     Group selected_group = draw_groups_list();
     usize selected_group_id = selected_group.id;

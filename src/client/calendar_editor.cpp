@@ -591,8 +591,10 @@ void editor_main_loop() {
                         redraw = true; break;
                     case AddingRepeatType:
                         new_repeat_type = NoRepeat;
-                        new_repeat_count = 1;
-                        ui_state = AddingRepeatCount;
+                        new_repeat_count = 0;
+                        // todo read new block name
+                        calendar.busy_times.push_back(TimeBlock("New Block", new_start_time, new_end_time, new_repeat_type, new_repeat_count));
+                        ui_state = ViewingCalendar;
                         redraw = true; break;
                 } break;
             case KEY_BACKSPACE:
@@ -657,8 +659,10 @@ void editor_main_loop() {
                 switch (ui_state) {
                     case AddingRepeatType:
                         new_repeat_type = NoRepeat;
-                        new_repeat_count = 1;
-                        ui_state = AddingRepeatCount;
+                        new_repeat_count = 0;
+                        // todo read new block name
+                        calendar.busy_times.push_back(TimeBlock("New Block", new_start_time, new_end_time, new_repeat_type, new_repeat_count));
+                        ui_state = ViewingCalendar;
                         redraw = true; break;
                 } break;
             
