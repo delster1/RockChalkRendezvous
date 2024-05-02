@@ -139,7 +139,7 @@ void get_current_user_group_calendars(){
         return Success;
     });
     wclear(menu_window);
-    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS" : "FAILURE");
+    mvwprintw(menu_window, 1, 1, "%s", decode_result == Success ? "SUCCESS DECODING GROUP CALENDARS" : "FAILURE TO DECODE GROUP CALENDARS");
     wrefresh(menu_window);
     napms(3000);
     wclear(menu_window);
@@ -204,6 +204,10 @@ void draw_edit_groups_window() {
             case '\n': // User made a selection
                 not_chosen = false;
                 break;
+            case 'q':
+                wclear(menu_window);
+                MenuState = MenuOption::InMenu;
+                return;
         }
     }
     wclear(menu_window);
@@ -246,7 +250,7 @@ Group draw_groups_list() {
     int character;
     bool not_chosen = true;
     mvwprintw(menu_window, 15, 1, "Press \'q\' to exit.");
-    while (true ) {
+    while (not_chosen ) {
         
         for (int i = 0; i < num_groups; ++i) {
             if (i == current_selection) {
@@ -276,6 +280,10 @@ Group draw_groups_list() {
                     current_selection = 0;
                 }
                 break;
+            case 'q':
+                wclear(menu_window);
+                MenuState = MenuOption::InMenu;
+                return Group();
             case '\n': // User made a selection
                 not_chosen = false;
                 break;
