@@ -25,7 +25,7 @@ enum MenuOption {
 
 static MenuOption MenuState;
 static WINDOW* menu_window;
-static const char *menu_choices[] = { "View/Edit Calendar", "View Group Calendars", "Edit Groups" };
+static const char *menu_choices[] = { "View/Edit Calendar", "View Group Calendars", "View/Edit Groups" };
 void draw_edit_groups_window();
 void draw_groups_create_window();
 void draw_groups_join_window();
@@ -200,10 +200,6 @@ void draw_edit_groups_window() {
     }
     wclear(menu_window);
     run_edit_group_selection(current_selection);
-    
-    wrefresh(menu_window);
-
-    napms(1000);
     wclear(menu_window);
 
 }
@@ -246,7 +242,7 @@ Group draw_groups_list() {
             }
             // Safeguard against potential out-of-bounds or corrupted strings - cgpt
             // std::string safe_display_name = (i < group_names.size()) ? group_names[i] : "Invalid Group";
-            mvwprintw(menu_window, i + 1, 1, "%s %lx", current_groups[i].name.c_str(), current_groups[i].id);
+            mvwprintw(menu_window, i + 1, 1, "%s %lX", current_groups[i].name.c_str(), current_groups[i].id);
             if (i == current_selection) {
                 wattroff(menu_window, A_REVERSE);
             }
@@ -304,11 +300,7 @@ void draw_groups_create_window() {
     napms(2000);
     MenuState = MenuOption::InMenu;
 }
-std::string usize_to_hex_string(usize value) {
-    std::stringstream ss;
-    ss << std::hex << value; // Convert to hex
-    return ss.str();
-}
+
 
 
 // JoinGroup(user, group_id)
@@ -342,7 +334,6 @@ void draw_groups_join_window() {
         MenuState = MenuOption::InMenu;
         return;
     }
-    mvwprintw(menu_window, 3, 5, "%d", group_id_type);
 
     Status joined_group =  send_join_group_request(group_id_type);
     if (joined_group == Failure) {
@@ -352,6 +343,7 @@ void draw_groups_join_window() {
         
     }
     wrefresh(menu_window);
+    napms(2000);
     MenuState = MenuOption::InMenu;
 }
 // LeaveGroup(user, group_id)g
@@ -361,7 +353,7 @@ void draw_groups_leave_window() {
     std::string selected_group_name = selected_group.name;
     wclear(menu_window);
     mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
-    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
+    mvwprintw(menu_window, 5, 1, "Group ID: %lx", selected_group_id);
 
     Status left_group =  send_leave_group_request(selected_group_id);
     if (left_group == Failure) {
@@ -376,18 +368,7 @@ void draw_groups_leave_window() {
     napms(2000);
     MenuState = MenuOption::InMenu;
 }
-// GetGroups(user) -> get encoded groups
-void draw_groups_get_window() {
-    Group selected_group = draw_groups_list();
-    usize selected_group_id = selected_group.id;
-    std::string selected_group_name = selected_group.name;
-    wclear(menu_window);
-    mvwprintw(menu_window, 4, 1, "Group Name: %s", selected_group_name.c_str());
-    mvwprintw(menu_window, 5, 1, "Group ID: %lu", selected_group_id);
 
-    // THIS WHERE USERS WILL CHOOSE WHICH GROUP CALENDAR TO VIEW
-    
-}
 
 void update_user_calendar(){
     std::string request_out = send_get_user_calendar_request();
@@ -411,14 +392,14 @@ void update_menu_screen() {
                     wclear(menu_window);
                     mvwprintw(menu_window,  1, 1, "Updated user calendar!");
                     wrefresh(menu_window);
-                    napms(2000);
+                    napms(1000);
                     wclear(menu_window);
                     break;
                 case Failure:
                     wclear(menu_window);
                     mvwprintw(menu_window,  1, 1, "FAILED TO UPDATE user calendar!");
                     wrefresh(menu_window);
-                    napms(2000);
+                    napms(1000);
                     wclear(menu_window);
                     break;
             } 

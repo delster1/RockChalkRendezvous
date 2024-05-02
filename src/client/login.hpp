@@ -109,7 +109,6 @@ Status draw_account_auth_window() {
     wclear(login_window);
     mvwprintw(login_window, 7, 0, "Trying to authorize your account");
     wrefresh(login_window);
-    napms(1000);
     httplib::Client* my_client = build_client();
     username_string = username;
     password_string = password;
