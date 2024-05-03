@@ -231,6 +231,7 @@ void draw_group_calendar_week() {
     u32 max = group_calendars.size();
     
     for (const auto& pair : group_calendars) {
+        u32 user_counts[7][96] = {{ 0 }};
         const std::string& user_name = std::get<0>(pair);
         const Calendar& user_calendar = std::get<1>(pair);
         
@@ -249,8 +250,16 @@ void draw_group_calendar_week() {
                     if (day_of_week == end_day_of_week) end_row = display_end.add_minutes(-1).get_minute_of_day() / calendar_row_size;
                     
                     for (u32 row = start_row; row <= end_row; row++) {
-                        counts[day_of_week][row] += 1;
+                        user_counts[day_of_week][row] += 1;
                     }
+                }
+            }
+        }
+
+        for (u32 day_of_week = 0; day_of_week < 7; day_of_week++) {
+            for (u32 row = 0; row < 96; row++) {
+                if (user_counts[day_of_week][row] > 0) {
+                    counts[day_of_week][row] += 1;
                 }
             }
         }
