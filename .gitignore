@@ -13,6 +13,5 @@ prototype/ui/main
 
 src/server/groups.txt
 src/server/users
-src/server/server
 src/server/config.txt
 src/client/config.txt
